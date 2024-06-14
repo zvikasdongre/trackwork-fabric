@@ -1,0 +1,12 @@
+{
+  "block.trackwork.suspension_track": "Suspension",
+  "block.trackwork.med_suspension_track": "Medium Suspension Track",
+  "block.trackwork.large_suspension_track" : "Large Suspension Track",
+  "block.trackwork.sprocket_track" : "Sprocket",
+  "block.trackwork.med_phys_track" : "Medium  Sprocket Track",
+  "block.trackwork.large_phys_track" : "Large Sprocket Track",
+  "item.trackwork.track_tool_kit" : "Track Toolkit",
+  "block.trackwork.track_level_controller" : "Suspension Controller",
+  "death.attack.trackwork.track" : "%1$s was flattened by tracks",
+  "death.attack.trackwork.track.player" : "%1$s was thrown into tracks by %2$s"
+}

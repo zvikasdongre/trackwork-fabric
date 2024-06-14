@@ -1,0 +1,97 @@
+{
+  "variants": {
+    "axis=x,axis_along_first=false,part=start": {
+      "model": "minecraft:block/air",
+      "x": 180
+    },
+    "axis=y,axis_along_first=false,part=start": {
+      "model": "minecraft:block/air"
+    },
+    "axis=z,axis_along_first=false,part=start": {
+      "model": "minecraft:block/air",
+      "x": 270,
+      "y": 90
+    },
+    "axis=x,axis_along_first=true,part=start": {
+      "model": "minecraft:block/air",
+      "x": 270
+    },
+    "axis=y,axis_along_first=true,part=start": {
+      "model": "minecraft:block/air",
+      "y": 270
+    },
+    "axis=z,axis_along_first=true,part=start": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=x,axis_along_first=false,part=middle": {
+      "model": "minecraft:block/air"
+    },
+    "axis=y,axis_along_first=false,part=middle": {
+      "model": "minecraft:block/air"
+    },
+    "axis=z,axis_along_first=false,part=middle": {
+      "model": "minecraft:block/air",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,axis_along_first=true,part=middle": {
+      "model": "minecraft:block/air",
+      "x": 90
+    },
+    "axis=y,axis_along_first=true,part=middle": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=z,axis_along_first=true,part=middle": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=x,axis_along_first=false,part=end": {
+      "model": "minecraft:block/air"
+    },
+    "axis=y,axis_along_first=false,part=end": {
+      "model": "minecraft:block/air",
+      "y": 180
+    },
+    "axis=z,axis_along_first=false,part=end": {
+      "model": "minecraft:block/air",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,axis_along_first=true,part=end": {
+      "model": "minecraft:block/air",
+      "x": 90
+    },
+    "axis=y,axis_along_first=true,part=end": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=z,axis_along_first=true,part=end": {
+      "model": "minecraft:block/air",
+      "y": 270
+    },
+    "axis=x,axis_along_first=false,part=none": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=y,axis_along_first=false,part=none": {
+      "model": "minecraft:block/air",
+      "x": 90
+    },
+    "axis=z,axis_along_first=false,part=none": {
+      "model": "minecraft:block/air"
+    },
+    "axis=x,axis_along_first=true,part=none": {
+      "model": "minecraft:block/air",
+      "y": 90
+    },
+    "axis=y,axis_along_first=true,part=none": {
+      "model": "minecraft:block/air",
+      "x": 90
+    },
+    "axis=z,axis_along_first=true,part=none": {
+      "model": "minecraft:block/air"
+    }
+  }
+}
