@@ -19,7 +19,6 @@ import net.zvikasdongre.trackwork.TrackworkSpriteShifts;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
-import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
 
 public class TrackBeltRenderer {
     public static void renderBelt(
@@ -82,11 +81,11 @@ public class TrackBeltRenderer {
 
         if (fromTrack.getNextPoint() != ITrackPointProvider.PointType.NONE) {
             Vec3d offset = fromTrack.getTrackPointSlope(partialTicks);
-            float opposite = (float) offset.z;
-            float adjacent = 1.0F + (float) offset.y;
+            float opposite = (float) offset.y;
+            float adjacent = 1.0F + (float) offset.z;
             SuperByteBuffer link = getLink(state);
             if (fromTrack.getNextPoint() == fromTrack.getTrackPointType()) {
-                float cut_adjacent = 0.5F + (float)offset.y;
+                float cut_adjacent = 0.5F + (float)offset.z;
                 float length = (float)Math.sqrt((double)(opposite * opposite + cut_adjacent * cut_adjacent));
                 float angleOffset = (float)Math.atan2((double)opposite, (double)cut_adjacent);
                 link.centre().rotateY(yRot)
@@ -99,8 +98,20 @@ public class TrackBeltRenderer {
                 link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
             }
             else {
-                // this is where the code for the angled belt thingy goes, i couldn't figure out the math
-                // for some reason the opposite variable is just 0 all the time, I pulled my hair out but i still couldn't figure out how to make it non zero
+                float length = (float)Math.sqrt((double)(adjacent * adjacent + opposite * opposite + (isLarge ? 0.25F : 0.0F)));
+                float flip = part == TrackBaseBlock.TrackPart.START ? -1.0F : 1.0F;
+                float angleOffset = (float)Math.atan2(opposite, adjacent + (isLarge ? 0.125F : 0.0F));
+                double angleInDegrees = (double)(angleOffset * 180.0F) / Math.PI;
+                link.centre().rotateY((double)yRot)
+                        .translate(
+                                0.0, -0.5, (double)((0.3125F + (isLarge && fromTrack.getTrackPointType() == ITrackPointProvider.PointType.WRAP ? 0.125F : 0.0F)) * flip)
+                        )
+                        .translate(0.0, (double)(-fromTrack.getPointDownwardOffset(partialTicks)), (double)fromTrack.getPointHorizontalOffset())
+                        .rotateX(angleInDegrees)
+                        .scale(1.0F, largeScale, length)
+                        .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(length))
+                        .unCentre();
+                link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
             }
         }
     }
