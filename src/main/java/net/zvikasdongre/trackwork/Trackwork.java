@@ -28,6 +28,7 @@ public class Trackwork implements ModInitializer {
 		TrackworkItems.initialize();
 		TrackworkItemGroups.initialize();
 		TrackworkBlockEntityTypes.initialize();
+		TrackworkEntities.initialize();
 		REGISTRATE.register();
 	}
 

@@ -35,9 +35,7 @@ import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
-import org.valkyrienskies.core.apigame.constraints.VSAttachmentConstraint;
-import org.valkyrienskies.core.apigame.constraints.VSConstraintAndId;
-import org.valkyrienskies.core.apigame.constraints.VSHingeOrientationConstraint;
+import org.valkyrienskies.core.apigame.constraints.*;
 import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
 import org.valkyrienskies.core.impl.game.ships.ShipTransformImpl;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
@@ -130,12 +128,12 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
             ServerShip ship = (ServerShip)this.ship.get();
             if (ship != null) {
                 PhysicsEntityTrackController controller = PhysicsEntityTrackController.getOrCreate(ship);
-                if (this.assembled) {
+                if (this.assembled && this.trackID != null) {
                     controller.removeTrackBlock((ServerWorld)this.getWorld(), this.trackID);
                 }
 
                 this.assembled = true;
-                Vector3dc trackLocalPos = VectorConversionsMCKt.toJOML(Vec3d.of(this.getPos()));
+                Vector3dc trackLocalPos = VectorConversionsMCKt.toJOML(Vec3d.ofCenter(this.getPos()));
                 WheelEntity wheel = (WheelEntity) TrackworkEntities.WHEEL.create(slevel);
                 long wheelId = VSGameUtilsKt.getShipObjectWorld(slevel).allocateShipId(VSGameUtilsKt.getDimensionId(slevel));
                 double wheelRadius = (double)this.wheelRadius;
@@ -188,14 +186,13 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
             this.assembleNextTick = false;
         } else if (this.getWorld() == null) {
             Trackwork.LOGGER.warn("Level is null????");
+            return;
         } else {
             if (this.assembled && !this.getWorld().isClient()) {
                 ServerShip ship = (ServerShip)this.ship.get();
                 if (ship != null) {
                     WheelEntity wheel = this.wheel.get();
-                    // TODO: Look into this
-                    // if (wheel == null || !wheel.m_6084_() || wheel.m_146910_()) {
-                    if (wheel == null) {
+                    if (wheel == null || !wheel.isAlive() || wheel.isRemoved()) {
                         this.assemble();
                         wheel = this.wheel.get();
                     }

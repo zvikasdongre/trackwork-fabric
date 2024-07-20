@@ -2,16 +2,8 @@ package net.zvikasdongre.trackwork.forces;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.mojang.datafixers.util.Pair;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import kotlin.jvm.functions.Function1;
-import net.zvikasdongre.trackwork.Trackwork;
 import net.zvikasdongre.trackwork.data.PhysTrackData;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
@@ -25,177 +17,187 @@ import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
 import org.valkyrienskies.physics_api.PoseVel;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 @JsonAutoDetect(
-   fieldVisibility = Visibility.ANY
+        fieldVisibility = JsonAutoDetect.Visibility.ANY
 )
 public class PhysicsTrackController implements ShipForcesInducer {
-   @JsonIgnore
-   public static final double RPM_TO_RADS = 0.10471975512;
-   @JsonIgnore
-   public static final double MAXIMUM_SLIP = 3.0;
-   public static final Vector3dc UP = new Vector3d(0.0, 1.0, 0.0);
-   private final HashMap<Integer, PhysTrackData> trackData = new HashMap<>();
-   @JsonIgnore
-   private final ConcurrentLinkedQueue<Pair<Integer, PhysTrackData.PhysTrackCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
-   @JsonIgnore
-   private final ConcurrentHashMap<Integer, PhysTrackData.PhysTrackUpdateData> trackUpdateData = new ConcurrentHashMap<>();
-   private final ConcurrentLinkedQueue<Integer> removedTracks = new ConcurrentLinkedQueue<>();
-   private int nextBearingID = 0;
-   private volatile Vector3dc suspensionAdjust = new Vector3d(0.0, 1.0, 0.0);
-   private volatile float suspensionStiffness = 1.0F;
-   private float debugTick = 0.0F;
+    @JsonIgnore
+    public static final double RPM_TO_RADS = 0.10471975512;
+    @JsonIgnore
+    public static final double MAXIMUM_SLIP = 3;
+    public static final Vector3dc UP = new Vector3d(0, 1, 0);
+    private final HashMap<Integer, PhysTrackData> trackData = new HashMap<>();
 
-   public static PhysicsTrackController getOrCreate(ServerShip ship) {
-      if (ship.getAttachment(PhysicsTrackController.class) == null) {
-         ship.saveAttachment(PhysicsTrackController.class, new PhysicsTrackController());
-      }
+    @JsonIgnore
+    private final ConcurrentLinkedQueue<Pair<Integer, PhysTrackData.PhysTrackCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
+    @JsonIgnore
+    private final ConcurrentHashMap<Integer, PhysTrackData.PhysTrackUpdateData> trackUpdateData = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<Integer> removedTracks = new ConcurrentLinkedQueue<>();
+    private int nextBearingID = 0;
 
-      return (PhysicsTrackController)ship.getAttachment(PhysicsTrackController.class);
-   }
+    private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
+    private volatile float suspensionStiffness = 1.0f;
 
-   public void applyForcesAndLookupPhysShips(@NotNull PhysShip physShip, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
+    public PhysicsTrackController () {}
 
-      while (!this.createdTrackData.isEmpty()) {
-         Pair<Integer, PhysTrackData.PhysTrackCreateData> createData = this.createdTrackData.remove();
-         this.trackData.put((Integer)createData.getFirst(), PhysTrackData.from((PhysTrackData.PhysTrackCreateData)createData.getSecond()));
-      }
+    public static PhysicsTrackController getOrCreate(ServerShip ship) {
+        if (ship.getAttachment(PhysicsTrackController.class) == null) {
+            ship.saveAttachment(PhysicsTrackController.class, new PhysicsTrackController());
+        }
 
-      this.trackUpdateData.forEach((id, data) -> {
-         PhysTrackData old = this.trackData.get(id);
-         if (old != null) {
-            this.trackData.put(id, old.updateWith(data));
-         }
-      });
-      this.trackUpdateData.clear();
+        return ship.getAttachment(PhysicsTrackController.class);
+    }
 
-      while (!this.removedTracks.isEmpty()) {
-         Integer removeId = this.removedTracks.remove();
-         this.trackData.remove(removeId);
-      }
+    private float debugTick = 0;
 
-      if (!this.trackData.isEmpty()) {
-         Vector3d netLinearForce = new Vector3d(0.0);
-         Vector3d netTorque = new Vector3d(0.0);
-         double coefficientOfPower = Math.min(2.0, 14.0 / (double)this.trackData.size());
-         this.trackData.forEach((id, data) -> {
-            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, (PhysShipImpl)physShip, coefficientOfPower, lookupPhysShip);
-            if (forces != null) {
-               netLinearForce.add((Vector3dc)forces.getFirst());
-               netTorque.add((Vector3dc)forces.getSecond());
+    @Override
+    public void applyForcesAndLookupPhysShips(@NotNull PhysShip physShip, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
+        while(!this.createdTrackData.isEmpty()) {
+            Pair<Integer, PhysTrackData.PhysTrackCreateData> createData = this.createdTrackData.remove();
+            this.trackData.put(createData.getFirst(), PhysTrackData.from(createData.getSecond()));
+        }
+
+        this.trackUpdateData.forEach((id, data) -> {
+            PhysTrackData old = this.trackData.get(id);
+            if (old != null) {
+                this.trackData.put(id, old.updateWith(data));
             }
-         });
-         if (netLinearForce.isFinite()) {
-            physShip.applyInvariantForce(netLinearForce);
-         }
+        });
+        this.trackUpdateData.clear();
 
-         if (netTorque.isFinite()) {
-            physShip.applyInvariantTorque(netTorque);
-         }
-      }
-   }
+        // Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
+        while(!removedTracks.isEmpty()) {
+            Integer removeId = this.removedTracks.remove();
+            this.trackData.remove(removeId);
+        }
 
-   public void applyForces(@NotNull PhysShip physShip) {
-   }
+        if (this.trackData.isEmpty()) return;
 
-   private Pair<Vector3dc, Vector3dc> computeForce(
-      PhysTrackData data, PhysShipImpl ship, double coefficientOfPower, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip
-   ) {
-      PoseVel pose = ship.getPoseVel();
-      ShipTransform shipTransform = ship.getTransform();
-      double m = ship.getInertia().getShipMass();
-      Vector3dc trackRelPosShip = data.trackOriginPosition.sub(shipTransform.getPositionInShip(), new Vector3d());
-      Vector3dc tForce = data.trackSpeed;
-      Vector3dc trackNormal = data.trackNormal.normalize(new Vector3d());
-      Vector3dc trackSurface = data.trackSpeed.mul((double)data.trackRPM * 0.10471975512 * 0.5, new Vector3d());
-      Vector3dc velocityAtPosition = accumulatedVelocity(shipTransform, pose, data.trackContactPosition);
-      if (data.istrackGrounded && data.groundShipId != null) {
-         PhysShipImpl ground = (PhysShipImpl)lookupPhysShip.invoke(data.groundShipId);
-         Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getPoseVel(), data.trackContactPosition);
-         velocityAtPosition = velocityAtPosition.sub(groundShipVelocity, new Vector3d());
-      }
+        Vector3d netLinearForce = new Vector3d(0);
+        Vector3d netTorque = new Vector3d(0);
 
-      if (data.istrackGrounded) {
-         double suspensionDelta = velocityAtPosition.dot(trackNormal);
-         double tilt = 1.0 + this.tilt(trackRelPosShip);
-         tForce = tForce.add(
-            data.suspensionCompression.mul(m * 1.0 * coefficientOfPower * (double)this.suspensionStiffness * tilt, new Vector3d()), new Vector3d()
-         );
-         tForce = tForce.add(
-            trackNormal.mul(m * 0.8 * -suspensionDelta * coefficientOfPower * (double)this.suspensionStiffness, new Vector3d()), new Vector3d()
-         );
-         if (data.trackRPM == 0.0F) {
-            tForce = new Vector3d(0.0, tForce.y(), 0.0);
-         }
-      }
+        double coefficientOfPower = Math.min(2.0d, 14d / this.trackData.size());
+        this.trackData.forEach((id, data) -> {
+            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), coefficientOfPower, lookupPhysShip);
+            if (forces != null) {
+                netLinearForce.add(forces.getFirst());
+                netTorque.add(forces.getSecond());
+            }
+        });
 
-      if (data.istrackGrounded || trackSurface.lengthSquared() > 0.0) {
-         Vector3dc surfaceVelocity = velocityAtPosition.sub(trackNormal.mul(velocityAtPosition.dot(trackNormal), new Vector3d()), new Vector3d());
-         Vector3dc slipVelocity = trackSurface.sub(surfaceVelocity, new Vector3d());
-         tForce = tForce.add(slipVelocity.normalize(Math.min(slipVelocity.length(), 3.0), new Vector3d()).mul(1.0 * m * coefficientOfPower), new Vector3d());
-      }
+        if (netLinearForce.isFinite()) physShip.applyInvariantForce(netLinearForce);
+        if (netTorque.isFinite()) physShip.applyInvariantTorque(netTorque);
+    }
 
-      Vector3dc trackRelPos = shipTransform.getShipToWorldRotation().transform(trackRelPosShip, new Vector3d());
-      Vector3dc torque = trackRelPos.cross(tForce, new Vector3d());
-      return new Pair(tForce, torque);
-   }
+    @Override
+    public void applyForces(@NotNull PhysShip physShip) {
+        // DO NOTHING
+    }
 
-   private static Vector3dc accumulatedVelocity(ShipTransform t, PoseVel pose, Vector3dc worldPosition) {
-      return pose.getVel().add(pose.getOmega().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
-   }
+    private Pair<Vector3dc, Vector3dc> computeForce(PhysTrackData data, PhysShipImpl ship, double coefficientOfPower, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
+        PoseVel pose = ship.getPoseVel();
+        ShipTransform shipTransform = ship.getTransform();
+        double m =  ship.getInertia().getShipMass();
+        Vector3dc trackRelPosShip = data.trackOriginPosition.sub(shipTransform.getPositionInShip(), new Vector3d());
+//            Vector3dc worldSpaceTrackOrigin = shipTransform.getShipToWorld().transformPosition(data.trackOriginPosition.get(new Vector3d()));
+        Vector3dc tForce = new Vector3d(); //data.trackSpeed;
+        Vector3dc trackNormal = data.trackNormal.normalize(new Vector3d());
+        Vector3dc trackSurface = data.trackSpeed.mul(data.trackRPM * RPM_TO_RADS * 0.5, new Vector3d());
+        Vector3dc velocityAtPosition = accumulatedVelocity(shipTransform, pose, data.trackContactPosition);
+        if (data.istrackGrounded && data.groundShipId != null) {
+            PhysShipImpl ground = (PhysShipImpl) lookupPhysShip.invoke(data.groundShipId);
+            Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getPoseVel(), data.trackContactPosition);
+            velocityAtPosition = velocityAtPosition.sub(groundShipVelocity, new Vector3d());
+        }
 
-   public final int addTrackBlock(PhysTrackData.PhysTrackCreateData data) {
-      this.createdTrackData.add(new Pair(++this.nextBearingID, data));
-      return this.nextBearingID;
-   }
+        if (data.istrackGrounded) {
+            double suspensionDelta = velocityAtPosition.dot(trackNormal) + data.getSuspensionCompressionDelta().length();
+            double tilt = 1 + this.tilt(trackRelPosShip);
+            tForce = tForce.add(data.suspensionCompression.mul(m * 1.0 * coefficientOfPower * this.suspensionStiffness * tilt, new Vector3d()), new Vector3d());
+            tForce = tForce.add(trackNormal.mul(m * 0.6 * -suspensionDelta * coefficientOfPower * this.suspensionStiffness, new Vector3d()), new Vector3d());
+            // Really half-assed antislip when the spring is stronger than friction (what?)
+            if (data.trackRPM == 0) {
+                tForce = new Vector3d(0, tForce.y(), 0);
+            }
+        }
 
-   public final double updateTrackBlock(Integer id, PhysTrackData.PhysTrackUpdateData data) {
-      this.trackUpdateData.put(id, data);
-      return (double)Math.round(this.suspensionAdjust.y() * 16.0) / 16.0 * (double)((9.0F + 1.0F / (this.suspensionStiffness * 2.0F - 1.0F)) / 10.0F);
-   }
+        if (data.istrackGrounded || trackSurface.lengthSquared() > 0) {
+            // Torque
+            Vector3dc surfaceVelocity = velocityAtPosition.sub(trackNormal.mul(velocityAtPosition.dot(trackNormal), new Vector3d()), new Vector3d());
+            Vector3dc slipVelocity = trackSurface.sub(surfaceVelocity, new Vector3d());
+            // TODO: Do I want to use real friction here?
+            if (data.istrackGrounded) {
+                tForce = tForce.add(slipVelocity.normalize(Math.min(slipVelocity.length(), MAXIMUM_SLIP), new Vector3d()).mul(1.0 * m * coefficientOfPower), new Vector3d());
+            } else {
+                slipVelocity = surfaceVelocity.normalize(new Vector3d()).mul(slipVelocity.dot(surfaceVelocity.normalize(new Vector3d())), new Vector3d());
+                tForce = tForce.add(slipVelocity.normalize(Math.min(slipVelocity.length(), MAXIMUM_SLIP), new Vector3d()).mul(1.0 * m * coefficientOfPower), new Vector3d());
+            }
+        }
 
-   public final void removeTrackBlock(int id) {
-      this.removedTracks.add(id);
-   }
+        Vector3dc trackRelPos = shipTransform.getShipToWorldRotation().transform(trackRelPosShip, new Vector3d());//worldSpaceTrackOrigin.sub(shipTransform.getPositionInWorld(), new Vector3d());
+        Vector3dc torque = trackRelPos.cross(tForce, new Vector3d());
+        return new Pair<>(tForce, torque);
+    }
 
-   public final float setDamperCoefficient(float delta) {
-      this.suspensionStiffness = Math.clamp(1.0F, 4.0F, this.suspensionStiffness + delta);
-      return this.suspensionStiffness;
-   }
+    private static Vector3dc accumulatedVelocity(ShipTransform t, PoseVel pose, Vector3dc worldPosition) {
+        return pose.getVel().add(pose.getOmega().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
+    }
 
-   public final void adjustSuspension(Vector3f delta) {
-      Vector3dc old = this.suspensionAdjust;
-      this.suspensionAdjust = new Vector3d(
-         Math.clamp(-0.5, 0.5, old.x() + (double)(delta.x() * 5.0F)),
-         Math.clamp(0.1, 1.0, old.y() + (double)delta.y()),
-         Math.clamp(-0.5, 0.5, old.z() + (double)(delta.z() * 5.0F))
-      );
-   }
+    public final int addTrackBlock(PhysTrackData.PhysTrackCreateData data) {
+        this.createdTrackData.add(new Pair<>(++nextBearingID, data));
+        return this.nextBearingID;
+    }
 
-   public final void resetSuspension() {
-      double y = this.suspensionAdjust.y();
-      this.suspensionAdjust = new Vector3d(0.0, y, 0.0);
-   }
+    public final double updateTrackBlock(Integer id, PhysTrackData.PhysTrackUpdateData data) {
+        this.trackUpdateData.put(id, data);
+        return Math.round(this.suspensionAdjust.y()*16) / 16. * ((9+1/(this.suspensionStiffness*2 - 1))/10);
+    }
 
-   private double tilt(Vector3dc relPos) {
-      return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
-   }
+    public final void removeTrackBlock(int id) {
+        this.removedTracks.add(id);
+    }
 
-   public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
-      return Arrays.equals(left.toArray(), right.toArray());
-   }
+    public final float setDamperCoefficient(float delta) {
+        this.suspensionStiffness = Math.clamp(1.0f, 4.0f, this.suspensionStiffness + delta);
+        return this.suspensionStiffness;
+    }
 
-   @Override
-   public boolean equals(Object other) {
-      if (this == other) {
-         return true;
-      } else {
-         return !(other instanceof PhysicsTrackController otherController)
-            ? false
-            : Objects.equals(this.trackData, otherController.trackData)
-               && Objects.equals(this.trackUpdateData, otherController.trackUpdateData)
-               && areQueuesEqual(this.createdTrackData, otherController.createdTrackData)
-               && areQueuesEqual(this.removedTracks, otherController.removedTracks)
-               && this.nextBearingID == otherController.nextBearingID;
-      }
-   }
+    public final void adjustSuspension(Vector3f delta) {
+        Vector3dc old = this.suspensionAdjust;
+        this.suspensionAdjust = new Vector3d(
+                Math.clamp(-0.5, 0.5, old.x() + delta.x()*5),
+                Math.clamp(0.1, 1, old.y() + delta.y()),
+                Math.clamp(-0.5, 0.5, old.z() + delta.z()*5)
+        );
+    }
+
+    public final void resetSuspension() {
+        double y = this.suspensionAdjust.y();
+        this.suspensionAdjust = new Vector3d(0, y,0);
+    }
+
+    private double tilt(Vector3dc relPos) {
+        return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
+    }
+
+    public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
+        return Arrays.equals(left.toArray(), right.toArray());
+    }
+
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (!(other instanceof PhysicsTrackController otherController)) {
+            return false;
+        } else {
+            return Objects.equals(this.trackData, otherController.trackData) && Objects.equals(this.trackUpdateData, otherController.trackUpdateData) && areQueuesEqual(this.createdTrackData, otherController.createdTrackData) && areQueuesEqual(this.removedTracks, otherController.removedTracks) && this.nextBearingID == otherController.nextBearingID;
+        }
+    }
 }
