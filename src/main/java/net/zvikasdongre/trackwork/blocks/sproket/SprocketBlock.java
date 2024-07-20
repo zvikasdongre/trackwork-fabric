@@ -28,6 +28,6 @@ public class SprocketBlock extends TrackBaseBlock<SprocketBlockEntity> {
     }
 
     public BlockEntityType<? extends SprocketBlockEntity> getBlockEntityType() {
-        return (BlockEntityType<? extends SprocketBlockEntity>) TrackworkBlockEntityTypes.SPROCKET_TRACK_TYPE.get();
+        return (BlockEntityType<? extends SprocketBlockEntity>) TrackworkBlockEntityTypes.SPROCKET_TRACK.get();
     }
 }

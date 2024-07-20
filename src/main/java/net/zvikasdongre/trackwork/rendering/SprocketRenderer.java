@@ -53,7 +53,7 @@ public class SprocketRenderer extends KineticBlockEntityRenderer<SprocketBlockEn
 
       cogs.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
 
-//      if (true) {
+      if (be.assembled) {
          TrackBeltRenderer.renderBelt(
             be,
             partialTicks,
@@ -62,7 +62,7 @@ public class SprocketRenderer extends KineticBlockEntityRenderer<SprocketBlockEn
             light,
             new TrackBeltRenderer.ScalableScroll(be, (float)((double)be.getSpeed() * ((double)be.getWheelRadius() / 0.5)), trackAxis)
          );
-//      }
+      }
    }
 
    public static float getAngleForBE(KineticBlockEntity be, BlockPos pos, Direction.Axis axis) {

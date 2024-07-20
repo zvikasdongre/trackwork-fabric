@@ -15,7 +15,11 @@ public class TrackworkItemGroups {
             .displayName(Text.literal("Trackwork"))
             .entries((displayContext, entries) -> {
                 entries.add(TrackworkBlocks.SUSPENSION_TRACK.asItem());
+                entries.add(TrackworkBlocks.MED_SUSPENSION_TRACK.asItem());
+                entries.add(TrackworkBlocks.LARGE_SUSPENSION_TRACK.asItem());
                 entries.add(TrackworkBlocks.SPROCKET_TRACK.asItem());
+                entries.add(TrackworkBlocks.MED_SPROCKET_TRACK.asItem());
+                entries.add(TrackworkBlocks.LARGE_SPROCKET_TRACK.asItem());
             })
             .build();
 

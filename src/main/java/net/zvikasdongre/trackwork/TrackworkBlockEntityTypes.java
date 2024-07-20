@@ -14,10 +14,36 @@ public class TrackworkBlockEntityTypes {
             .renderer(() -> SuspensionRenderer::new)
             .register();
 
-    public static final BlockEntityEntry<SprocketBlockEntity> SPROCKET_TRACK_TYPE = Trackwork.REGISTRATE
+    public static final BlockEntityEntry<SuspensionTrackBlockEntity> LARGE_SUSPENSION_TRACK = Trackwork.REGISTRATE
+            .blockEntity("large_suspension_track", SuspensionTrackBlockEntity::large)
+//            .instance(() -> SuspensionInstance::new, false)
+            .validBlocks(TrackworkBlocks.LARGE_SUSPENSION_TRACK)
+            .renderer(() -> SuspensionRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<SuspensionTrackBlockEntity> MED_SUSPENSION_TRACK = Trackwork.REGISTRATE
+            .blockEntity("med_suspension_track", SuspensionTrackBlockEntity::med)
+//            .instance(() -> SuspensionInstance::new, false)
+            .validBlocks(TrackworkBlocks.MED_SUSPENSION_TRACK)
+            .renderer(() -> SuspensionRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<SprocketBlockEntity> SPROCKET_TRACK = Trackwork.REGISTRATE
             .blockEntity("sprocket_track", SprocketBlockEntity::new)
             .instance(() -> SprocketInstance::new)
             .validBlocks(TrackworkBlocks.SPROCKET_TRACK)
+            .renderer(() -> SprocketRenderer::new)
+            .register();
+    public static final BlockEntityEntry<SprocketBlockEntity> LARGE_SPROCKET_TRACK = Trackwork.REGISTRATE
+            .blockEntity("large_sprocket_track", SprocketBlockEntity::large)
+            .instance(() -> SprocketInstance::new)
+            .validBlocks(TrackworkBlocks.LARGE_SPROCKET_TRACK)
+            .renderer(() -> SprocketRenderer::new)
+            .register();
+    public static final BlockEntityEntry<SprocketBlockEntity> MED_SPROCKET_TRACK = Trackwork.REGISTRATE
+            .blockEntity("med_sprocket_track", SprocketBlockEntity::med)
+            .instance(() -> SprocketInstance::new)
+            .validBlocks(TrackworkBlocks.MED_SPROCKET_TRACK)
             .renderer(() -> SprocketRenderer::new)
             .register();
 

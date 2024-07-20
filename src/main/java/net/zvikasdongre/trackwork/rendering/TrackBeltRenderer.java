@@ -21,113 +21,99 @@ import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
 
 public class TrackBeltRenderer {
-    public static void renderBelt(
-            TrackBaseBlockEntity be, float partialTicks, MatrixStack ms, VertexConsumerProvider buffer, int light, ScalableScroll scroll
-    ) {
-        if (!be.isDetracked()) {
-            BlockState state = be.getCachedState();
-            float yRot = getYRotFromState(state);
-            renderLink(be, partialTicks, state, yRot, light, ms, buffer, scroll);
-        }
+    public static void renderBelt(TrackBaseBlockEntity be, float partialTicks, MatrixStack ms, VertexConsumerProvider buffer,
+                                  int light, ScalableScroll scroll) {
+
+//        if (Backend.canUseInstancing(be.getWorld())) return;
+        if (be.isDetracked()) return;
+        BlockState state = be.getCachedState();
+        float yRot = getYRotFromState(state);
+        renderLink(be, partialTicks, state, yRot, light, ms, buffer, scroll);
     }
 
-    private static void renderLink(
-            TrackBaseBlockEntity fromTrack,
-            float partialTicks,
-            BlockState state,
-            float yRot,
-            int light,
-            MatrixStack ms,
-            VertexConsumerProvider buf,
-            ScalableScroll scroll
-    ) {
+    private static void renderLink(TrackBaseBlockEntity fromTrack, float partialTicks,
+                                   BlockState state, float yRot, int light, MatrixStack ms, VertexConsumerProvider buf,
+                                   ScalableScroll scroll) {
         boolean isLarge = fromTrack.isBeltLarge();
-        float largeScale = isLarge ? 2.0F : 2.0F * fromTrack.getWheelRadius();
-        TrackBaseBlock.TrackPart part = (TrackBaseBlock.TrackPart) state.get(TrackBaseBlock.PART);
+        float largeScale = isLarge ? 2 : 2*fromTrack.getWheelRadius();
+        SuperByteBuffer topLink;
+        TrackBaseBlock.TrackPart part = state.get(TrackBaseBlock.PART);
         if (part == TrackBaseBlock.TrackPart.MIDDLE) {
-            SuperByteBuffer topLink = getLink(state);
-            ((SuperByteBuffer)((SuperByteBuffer)((SuperByteBuffer)topLink.centre()).rotateY((double)yRot)).rotateX(180.0))
-                    .translate(0.0, -0.53125 * (double)largeScale, -0.5)
-                    .scale(1.0F, largeScale, 1.0F)
-                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(1.0F))
+            topLink = getLink(state);
+            topLink.centre()
+                    .rotateY(yRot)
+                    .rotateX(180)
+                    .translate(0, (-0.5)*(17/16f)*largeScale, -0.5)
+                    .scale(1, largeScale, 1)
+                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(1.0f))
                     .unCentre();
-            topLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
-            SuperByteBuffer flatlink = getLink(state);
-            ((SuperByteBuffer)((SuperByteBuffer)flatlink.centre()).rotateY((double)yRot))
-                    .translate(0.0, -0.5, -0.25)
-                    .translate(0.0, (double)(-fromTrack.getPointDownwardOffset(partialTicks)), (double)fromTrack.getPointHorizontalOffset())
-                    .scale(1.0F, largeScale, 0.5F)
-                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(0.5F))
-                    .unCentre();
-            flatlink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
-        } else if (fromTrack.getTrackPointType() == ITrackPointProvider.PointType.WRAP) {
-            float flip = part == TrackBaseBlock.TrackPart.END ? -1.0F : 1.0F;
-            SuperByteBuffer topLink = getLink(state);
-            topLink.centre().rotateY(yRot).rotateX(180.0)
-                    .translate(0.0, -0.53125 * (double)largeScale, -0.5)
-                    .scale(1.0F, largeScale, 0.75F + largeScale / 16.0F)
-                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(flip))
-                    .unCentre();
+            topLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
 
-            topLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
-            SuperByteBuffer wrapLink = CachedBufferer.partial(TrackworkPartialModels.TRACK_WRAP, state);
-            wrapLink.centre().rotateY(yRot)
-                    .scale(1.0F, largeScale, largeScale)
-                    .translate(0.0, 0.5625, -0.0625)
+            SuperByteBuffer flatlink = getLink(state);
+            flatlink.centre()
+                    .rotateY(yRot)
+                    .translate(0, -0.5f, -0.25)
+                    .translate(0, -fromTrack.getPointDownwardOffset(partialTicks), fromTrack.getPointHorizontalOffset())
+                    .scale(1, largeScale, 0.5f)
+                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(0.5f))
+                    .unCentre();
+            flatlink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
+        } else if (fromTrack.getTrackPointType() == ITrackPointProvider.PointType.WRAP) {
+            float flip = (part == TrackBaseBlock.TrackPart.END) ? -1 : 1;
+            topLink = getLink(state);
+            topLink.centre()
+                    .rotateY(yRot)
+                    .rotateX(180)
+                    .translate(0, (-0.5)*(17/16f)*largeScale, -0.5)
+                    .scale(1, largeScale, 12/16f + (largeScale/16f))
                     .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(flip))
                     .unCentre();
-            wrapLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
+            topLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
+
+            SuperByteBuffer wrapLink = CachedBufferer.partial(TrackworkPartialModels.TRACK_WRAP, state);
+            wrapLink.centre()
+                    .rotateY(yRot)
+                    .scale(1, largeScale,largeScale)
+                    .translate(0, (0.5) + 1/16f, fromTrack.getWheelRadius() > 0.667 ? 0.5/16f : -1/16f)
+                    .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(flip))
+                    .unCentre();
+            wrapLink.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
         }
 
         if (fromTrack.getNextPoint() != ITrackPointProvider.PointType.NONE) {
             Vec3d offset = fromTrack.getTrackPointSlope(partialTicks);
             float opposite = (float) offset.y;
-            float adjacent = 1.0F + (float) offset.z;
+            float adjacent = 1 + (float) offset.z;
+            // Slope Link
             SuperByteBuffer link = getLink(state);
-            if (fromTrack.getNextPoint() == fromTrack.getTrackPointType()) {
-                float cut_adjacent = 0.5F + (float)offset.z;
-                float length = (float)Math.sqrt((double)(opposite * opposite + cut_adjacent * cut_adjacent));
-                float angleOffset = (float)Math.atan2((double)opposite, (double)cut_adjacent);
-                link.centre().rotateY(yRot)
-                        .translate(0.0, -0.5, 0.25)
-                        .translate(0.0, (double)(-fromTrack.getPointDownwardOffset(partialTicks)), (double)fromTrack.getPointHorizontalOffset())
-                        .rotateX((double)(angleOffset * 180.0F) / Math.PI)
-                        .scale(1.0F, largeScale, length)
+            if (fromTrack.getNextPoint() == fromTrack.getTrackPointType()) {        // Middle
+                float cut_adjacent = 8/16f + (float) offset.z;
+                float length = (float) Math.sqrt(opposite*opposite + cut_adjacent*cut_adjacent);
+                float angleOffset = (float) (Math.atan2(opposite, cut_adjacent));
+                link.centre()
+                        .rotateY(yRot)
+                        .translate(0, -0.5f, 4 / 16f)
+                        .translate(0, -fromTrack.getPointDownwardOffset(partialTicks), fromTrack.getPointHorizontalOffset())
+                        .rotateX(angleOffset * 180f / Math.PI)
+                        .scale(1, largeScale, length)
                         .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(length))
                         .unCentre();
-                link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
-            }
-            else {
-                float length = (float)Math.sqrt((double)(adjacent * adjacent + opposite * opposite + (isLarge ? 0.25F : 0.0F)));
-                float flip = part == TrackBaseBlock.TrackPart.START ? -1.0F : 1.0F;
-                float angleOffset = (float)Math.atan2(opposite, adjacent + (isLarge ? 0.125F : 0.0F));
-                double angleInDegrees = (double)(angleOffset * 180.0F) / Math.PI;
-                link.centre().rotateY((double)yRot)
-                        .translate(
-                                0.0, -0.5, (double)((0.3125F + (isLarge && fromTrack.getTrackPointType() == ITrackPointProvider.PointType.WRAP ? 0.125F : 0.0F)) * flip)
-                        )
-                        .translate(0.0, (double)(-fromTrack.getPointDownwardOffset(partialTicks)), (double)fromTrack.getPointHorizontalOffset())
-                        .rotateX(angleInDegrees)
-                        .scale(1.0F, largeScale, length)
+                link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
+            } else {                                                                // Ends
+                float length = (float) Math.sqrt(opposite*opposite + adjacent*adjacent + (isLarge ? 4/16f : 0));
+                float flip = (part == TrackBaseBlock.TrackPart.START) ? -1 : 1;
+                float angleOffset = (float) (Math.atan2(opposite, adjacent + (isLarge ? 2/16f : 0)));
+                link.centre()
+                        .rotateY(yRot)
+                        .translate(0, -0.5f, (5 / 16f + ((isLarge && fromTrack.getTrackPointType() == ITrackPointProvider.PointType.WRAP) ? 2/16f : 0)) * flip)
+                        .translate(0, -fromTrack.getPointDownwardOffset(partialTicks), fromTrack.getPointHorizontalOffset())
+                        .rotateX(angleOffset * 180f / Math.PI)
+                        .scale(1, largeScale, length)
                         .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(length))
                         .unCentre();
-                link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getCutoutMipped()));
+                link.light(light).renderInto(ms, buf.getBuffer(RenderLayer.getSolid()));
             }
         }
-    }
-
-    private static SuperByteBuffer getLink(BlockState state) {
-        return CachedBufferer.partial(TrackworkPartialModels.TRACK_LINK, state);
-    }
-
-    public static Direction getAlong(BlockState state) {
-        return state.get(RotatedPillarKineticBlock.AXIS) == Axis.X ? Direction.SOUTH : Direction.EAST;
-    }
-
-    public static float getYRotFromState(BlockState state) {
-        Axis trackAxis = (Axis)state.get(RotatedPillarKineticBlock.AXIS);
-        boolean flip = state.get(TrackBaseBlock.PART) == TrackBaseBlock.TrackPart.END;
-        return (float)((trackAxis == Axis.X ? 0 : 90) + (flip ? 180 : 0));
     }
 
     public static class ScalableScroll {
@@ -136,24 +122,40 @@ public class TrackBeltRenderer {
         private final float spriteSize;
         private final float scrollMult;
 
-        public ScalableScroll(KineticBlockEntity be, float speed, Axis axis) {
-            this.trueSpeed = axis == Axis.X ? speed : -speed;
-            this.time = AnimationTickHolder.getRenderTime(be.getWorld()) * 1.0F;
-            this.scrollMult = 0.5F;
+        public ScalableScroll(KineticBlockEntity be, final float speed, Direction.Axis axis) {
+            this.trueSpeed = (axis == Direction.Axis.X) ? speed : -speed;
+            this.time = AnimationTickHolder.getRenderTime(be.getWorld()) * 1;
+
+            this.scrollMult = 0.5f;
             SpriteShiftEntry spriteShift = TrackworkSpriteShifts.BELT;
             this.spriteSize = spriteShift.getTarget().getMaxV() - spriteShift.getTarget().getMinV();
         }
 
         public float getAtScale(float scale) {
-            float speed = this.trueSpeed / scale;
-            if (speed != 0.0F) {
-                double scroll = (double)(speed * this.time) / 504.0;
-                scroll -= Math.floor(scroll);
-                scroll = scroll * (double)this.spriteSize * (double)this.scrollMult;
-                return (float)scroll;
-            } else {
-                return 0.0F;
+            float speed = this.trueSpeed * scale;
+
+            if (speed != 0) {
+                double scroll = speed * this.time / (31.5 * 16);
+                scroll = scroll - Math.floor(scroll);
+                scroll = scroll * this.spriteSize * this.scrollMult;
+
+                return (float) scroll;
             }
+            return 0;
         }
+    }
+
+    private static SuperByteBuffer getLink(BlockState state) {
+        return CachedBufferer.partial(TrackworkPartialModels.TRACK_LINK, state);
+    }
+
+    public static Direction getAlong(BlockState state) {
+        return state.get(RotatedPillarKineticBlock.AXIS) == Direction.Axis.X ? Direction.SOUTH : Direction.EAST;
+    }
+
+    public static float getYRotFromState(BlockState state) {
+        Direction.Axis trackAxis = state.get(RotatedPillarKineticBlock.AXIS);
+        boolean flip = state.get(TrackBaseBlock.PART) == TrackBaseBlock.TrackPart.END;
+        return ((trackAxis == Direction.Axis.X) ? 0 : 90) + (flip ? 180 : 0);
     }
 }
