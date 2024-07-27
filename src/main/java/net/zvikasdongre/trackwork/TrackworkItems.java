@@ -1,22 +1,24 @@
 package net.zvikasdongre.trackwork;
 
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import com.simibubi.create.foundation.data.AssetLookup;
+import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.tterrag.registrate.util.entry.ItemEntry;
+import net.zvikasdongre.trackwork.items.ControllerResetStick;
+import net.zvikasdongre.trackwork.items.TrackToolkit;
+import net.zvikasdongre.trackwork.items.TrackToolkitRenderer;
 
 public class TrackworkItems {
-    public static <T extends Item> T register(T item, String ID) {
-        // Create the identifier for the item.
-        Identifier itemID = new Identifier(Trackwork.MOD_ID, ID);
+    public static final ItemEntry<TrackToolkit> TRACK_TOOL_KIT =
+            Trackwork.REGISTRATE.item("track_tool_kit", TrackToolkit::new)
+                    .properties(p -> p.maxCount(1))
+                    .transform(CreateRegistrate.customRenderedItem(() -> TrackToolkitRenderer::new))
+                    .model(AssetLookup.itemModelWithPartials())
+                    .register();
 
-        // Register the item.
-        T registeredItem = Registry.register(Registries.ITEM, itemID, item);
-
-        // Return the registered item!
-        return registeredItem;
-    }
+    public static final ItemEntry<ControllerResetStick> CONTROL_RESET_STICK =
+            Trackwork.REGISTRATE.item("dev_reset_stick", ControllerResetStick::new)
+                    .properties(p -> p.maxCount(1))
+                    .register();
 
     public static void initialize() {}
 }

@@ -1,6 +1,6 @@
 {
 	"credit": "Made with Blockbench",
-	"parent": "create:block/belt/middle",
+	"parent": "create:block/belt",
 	"texture_size": [32, 32],
 	"textures": {
 		"2": "trackwork:block/belt"
@@ -8,8 +8,8 @@
 	"elements": [
 		{
 			"name": "Axis",
-			"from": [0, 7, 8],
-			"to": [16, 9, 24],
+			"from": [0.5, 7, 8],
+			"to": [15.5, 9, 24],
 			"faces": {
 				"north": {"uv": [1, 8, 15, 10], "texture": "#2"},
 				"east": {"uv": [0, 0, 2, 16], "rotation": 90, "texture": "#2"},

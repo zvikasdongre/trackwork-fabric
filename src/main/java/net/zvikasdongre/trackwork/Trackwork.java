@@ -30,6 +30,7 @@ public class Trackwork implements ModInitializer {
 		TrackworkBlockEntityTypes.initialize();
 		TrackworkEntities.initialize();
 		REGISTRATE.register();
+		TrackworkSounds.initialize();
 	}
 
 	public static Identifier getResource(String path) {

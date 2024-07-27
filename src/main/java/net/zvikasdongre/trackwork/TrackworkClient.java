@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
+import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
 
 public class TrackworkClient implements ClientModInitializer {
@@ -27,6 +28,22 @@ public class TrackworkClient implements ClientModInitializer {
                 }
 
                 be.setWheelTravel(wheelTravel);
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(TrackworkPackets.WHEEL_PACKET_ID, (client, handler, buf, responseSender) -> {
+            BlockPos target = buf.readBlockPos();
+            float wheelTravel = buf.readFloat();
+            float steeringValue = buf.readFloat();
+            float horizontalOffset = buf.readFloat();
+            client.execute(() -> {
+                // Everything in this lambda is run on the render thread
+                WheelBlockEntity be = (WheelBlockEntity) client.world.getBlockEntity(target);
+                if (be == null) {
+                    return;
+                }
+
+                be.handlePacket(wheelTravel, steeringValue, horizontalOffset);
             });
         });
 

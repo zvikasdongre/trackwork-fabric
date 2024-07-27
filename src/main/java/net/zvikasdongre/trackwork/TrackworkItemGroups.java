@@ -12,7 +12,7 @@ import net.minecraft.util.Identifier;
 public class TrackworkItemGroups {
     public static final ItemGroup TRACKWORK_ITEMGROUP = FabricItemGroup.builder()
             .icon(() -> new ItemStack(AllBlocks.BELT))
-            .displayName(Text.literal("Trackwork"))
+            .displayName(Text.translatable("itemGroup.trackwork"))
             .entries((displayContext, entries) -> {
                 entries.add(TrackworkBlocks.SUSPENSION_TRACK.asItem());
                 entries.add(TrackworkBlocks.MED_SUSPENSION_TRACK.asItem());
@@ -20,6 +20,11 @@ public class TrackworkItemGroups {
                 entries.add(TrackworkBlocks.SPROCKET_TRACK.asItem());
                 entries.add(TrackworkBlocks.MED_SPROCKET_TRACK.asItem());
                 entries.add(TrackworkBlocks.LARGE_SPROCKET_TRACK.asItem());
+                entries.add(TrackworkBlocks.SIMPLE_WHEEL.asItem());
+                entries.add(TrackworkBlocks.SIMPLE_WHEEL_PART.asItem());
+                entries.add(TrackworkBlocks.TRACK_LEVEL_CONTROLLER.asItem());
+                entries.add(TrackworkItems.TRACK_TOOL_KIT.asItem());
+                entries.add(TrackworkItems.CONTROL_RESET_STICK.asItem());
             })
             .build();
 
