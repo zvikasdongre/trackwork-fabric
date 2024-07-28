@@ -14,6 +14,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.zvikasdongre.trackwork.Trackwork;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkPartialModels;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.sproket.SprocketBlockEntity;
@@ -77,6 +78,6 @@ public class SprocketRenderer extends KineticBlockEntityRenderer<SprocketBlockEn
     }
 
     public int getRenderDistance() {
-        return 256;
+        return TrackworkConfigs.trackRenderDist.get();
     }
 }

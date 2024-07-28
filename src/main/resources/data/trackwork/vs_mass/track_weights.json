@@ -28,5 +28,15 @@
     "block": "trackwork:large_sprocket_track",
     "mass": 525.0,
     "friction": 0.0
+  },
+  {
+    "block": "trackwork:simple_wheel",
+    "mass": 525.0,
+    "friction": 0.0
+  },
+  {
+    "block": "trackwork:simple_wheel_part",
+    "mass": 525.0,
+    "friction": 0.0
   }
 ]

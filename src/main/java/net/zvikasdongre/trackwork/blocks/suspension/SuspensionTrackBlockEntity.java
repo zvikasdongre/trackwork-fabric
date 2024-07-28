@@ -1,11 +1,18 @@
 package net.zvikasdongre.trackwork.blocks.suspension;
 
 
+import com.simibubi.create.infrastructure.config.AllConfigs;
 import net.minecraft.block.BlockRenderType;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.util.math.Direction;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.util.math.*;
 import net.zvikasdongre.trackwork.Trackwork;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
+import net.zvikasdongre.trackwork.TrackworkDamageTypes;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
@@ -21,6 +28,7 @@ import org.joml.Vector3dc;
 
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import java.util.Random;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -35,10 +43,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -153,13 +158,9 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
                 Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(getActionVec3d(this.getCachedState().get(AXIS), this.getSpeed()));
-                this.world.addParticle(new BlockStateParticleEffect(
-                        ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
-                        pos.x + (this.random.nextDouble() - 0.5D),
+                world.addParticle(ParticleTypes.FLAME, pos.x + (this.random.nextDouble() - 0.5D),
                         pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
-                );
+                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius, speed.x() * -1.0D, 10.5D, speed.z() * -1.0D);
             }
         }
 
@@ -221,8 +222,28 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                     ServerPlayNetworking.send(player, TrackworkPackets.SUSPENSION_PACKET_ID, buf);
                 }
 
-                // TODO: Entity Damage
+                // Entity Damage
                 // TODO: Players don't get pushed, why?
+                List<LivingEntity> hits = this.world.getEntitiesByClass(LivingEntity.class, new Box(this.getPos()).expand(0, -1, 0).contract(0.5), LivingEntity::isAlive);
+                Vec3d worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3d.ofCenter(this.getPos()))));
+                DamageSource damageSource = new DamageSource(
+                        world.getRegistryManager()
+                                .get(RegistryKeys.DAMAGE_TYPE)
+                                .entryOf(TrackworkDamageTypes.RUN_OVER));
+                for (LivingEntity e : hits) {
+//                    if (e instanceof ItemEntity)
+//                        continue;
+//                    if (e instanceof AbstractContraptionEntity)
+//                        continue;
+                    this.push(e, worldPos);
+//                    What is this?
+//                    if (e instanceof ServerPlayer p) {
+//                        ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
+//                    }
+                    Vec3d relPos = e.getPos().subtract(worldPos);
+                    float speed = Math.abs(this.getSpeed());
+                    if (speed > 1) e.damage(damageSource, (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
+                }
             }
         }
     }
@@ -294,34 +315,34 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
     public float getSpeed() {
         if (!assembled) return 0;
-        return Math.clamp(-256, 256, super.getSpeed());
+        return Math.clamp(-TrackworkConfigs.maxRPM.get(), TrackworkConfigs.maxRPM.get(), super.getSpeed());
     }
 
-//    public static void push(Entity entity, Vec3d worldPos) {
-//        if (!entity.noPhysics) {
-//            double d0 = entity.getX() - worldPos.x;
-//            double d1 = entity.getZ() - worldPos.z;
-//            double d2 = Mth.absMax(d0, d1);
-//            if (d2 >= (double)0.01F) {
-//                d2 = java.lang.Math.sqrt(d2);
-//                d0 /= d2;
-//                d1 /= d2;
-//                double d3 = 1.0D / d2;
-//                if (d3 > 1.0D) {
-//                    d3 = 1.0D;
-//                }
-//
-//                d0 *= d3;
-//                d1 *= d3;
-//                d0 *= (double)0.2F;
-//                d1 *= (double)0.2F;
-//
-//                if (!entity.isVehicle()) {
-//                    entity.push(d0, 0.0D, d1);
-//                }
-//            }
-//        }
-//    }
+    public static void push(Entity entity, Vec3d worldPos) {
+        if (!entity.noClip) {
+            double d0 = entity.getX() - worldPos.x;
+            double d1 = entity.getZ() - worldPos.z;
+            double d2 = MathHelper.absMax(d0, d1);
+            if (d2 >= (double)0.01F) {
+                d2 = java.lang.Math.sqrt(d2);
+                d0 /= d2;
+                d1 /= d2;
+                double d3 = 1.0D / d2;
+                if (d3 > 1.0D) {
+                    d3 = 1.0D;
+                }
+
+                d0 *= d3;
+                d1 *= d3;
+                d0 *= (double)0.2F;
+                d1 *= (double)0.2F;
+
+                if (!entity.hasPassengers()) {
+                    entity.addVelocity(d0, 0.0D, d1);
+                }
+            }
+        }
+    }
 
     @Override
     public void write(NbtCompound compound, boolean clientPacket) {

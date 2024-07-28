@@ -60,6 +60,9 @@ dependencies {
   modApi("org.valkyrienskies.core:api-game:${project.vs_core_version}")
   modApi("org.valkyrienskies.core:util:${project.vs_core_version}")
   modApi("org.valkyrienskies.core:impl:${project.vs_core_version}")
+
+  // Porting Lib - Config module
+  modImplementation("io.github.fabricators_of_create.Porting-Lib:config:${project.portinglib_config_version}")
 }
 
 processResources {

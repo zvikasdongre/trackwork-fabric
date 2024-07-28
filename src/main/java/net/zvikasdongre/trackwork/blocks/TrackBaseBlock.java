@@ -37,6 +37,8 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.WorldView;
+import net.minecraft.world.explosion.Explosion;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import org.jetbrains.annotations.NotNull;
 import net.minecraft.state.StateManager.Builder;
@@ -77,13 +79,13 @@ public abstract class TrackBaseBlock<BE extends TrackBaseBlockEntity> extends Ro
         return false;
     }
 
-//    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-//        if ((Boolean)TrackworkConfigs.server().enableTrackThrow.get()) {
-//            this.withBlockEntityDo(level, pos, be -> be.throwTrack(false));
-//        }
-//
-//        super.onBlockExploded(state, level, pos, explosion);
-//    }
+    public void onDestroyedByExplosion(World world, BlockPos pos, Explosion explosion) {
+        if ((Boolean) TrackworkConfigs.enableTrackThrow.get()) {
+            this.withBlockEntityDo(world, pos, be -> be.throwTrack(false));
+        }
+
+        super.onDestroyedByExplosion(world, pos, explosion);
+    }
 
     public void onBlockAdded(BlockState pState, World pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         super.onBlockAdded(pState, pLevel, pPos, pNewState, pIsMoving);

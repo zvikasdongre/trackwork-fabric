@@ -40,10 +40,10 @@ public class TrackworkBlocks {
     public static final BlockEntry<SuspensionTrackBlock> SUSPENSION_TRACK =
             REGISTRATE.block("suspension_track", SuspensionTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
-                    .properties(p -> p.mapColor(MapColor.BROWN))
+                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(12.0f).sounds(BlockSoundGroup.METAL))
                     .properties(AbstractBlock.Settings::nonOpaque)
                     .transform(BlockStressDefaults.setNoImpact())
-                    .transform(axeOrPickaxe())
+                    .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
                     .addLayer(() -> RenderLayer::getCutoutMipped)
@@ -59,6 +59,7 @@ public class TrackworkBlocks {
                     .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
+                    .addLayer(() -> RenderLayer::getCutoutMipped)
                     .item()
                     .transform(customItemModel())
                     .register();
@@ -79,8 +80,8 @@ public class TrackworkBlocks {
 
     public static final BlockEntry<SprocketBlock> SPROCKET_TRACK =
             REGISTRATE.block("sprocket_track", SprocketBlock::new)
-                    .initialProperties(SharedProperties::stone)
-                    .properties(p -> p.mapColor(MapColor.BROWN))
+                    .initialProperties(() -> Blocks.RAIL)
+                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(14.0f).sounds(BlockSoundGroup.METAL))
                     .properties(AbstractBlock.Settings::nonOpaque)
                     .transform(BlockStressDefaults.setNoImpact())
                     .transform(axeOrPickaxe())
@@ -96,7 +97,7 @@ public class TrackworkBlocks {
     public static final BlockEntry<LargeSprocketBlock> LARGE_SPROCKET_TRACK =
             REGISTRATE.block("large_sprocket_track", LargeSprocketBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
-                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(12.0f).sounds(BlockSoundGroup.METAL))
+                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(14.0f).sounds(BlockSoundGroup.METAL))
                     .properties(AbstractBlock.Settings::nonOpaque)
                     .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
@@ -110,7 +111,7 @@ public class TrackworkBlocks {
     public static final BlockEntry<MedSprocketBlock> MED_SPROCKET_TRACK =
             REGISTRATE.block("med_sprocket_track", MedSprocketBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
-                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(12.0f).sounds(BlockSoundGroup.METAL))
+                    .properties(p -> p.mapColor(MapColor.BROWN).noCollision().strength(14.0f).sounds(BlockSoundGroup.METAL))
                     .properties(AbstractBlock.Settings::nonOpaque)
                     .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())

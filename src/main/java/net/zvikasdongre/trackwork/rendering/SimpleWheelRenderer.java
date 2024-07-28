@@ -11,6 +11,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkPartialModels;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory.Context;
@@ -146,8 +147,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
 
     @Override
     public int getRenderDistance() {
-        // TODO: config
-        return 256;
+        return TrackworkConfigs.trackRenderDist.get();
     }
 
 }

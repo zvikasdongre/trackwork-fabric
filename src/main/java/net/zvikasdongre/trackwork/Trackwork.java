@@ -1,10 +1,11 @@
 package net.zvikasdongre.trackwork;
 
 import com.simibubi.create.foundation.data.CreateRegistrate;
-import com.tterrag.registrate.Registrate;
+import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
 import net.fabricmc.api.ModInitializer;
 
 import net.minecraft.util.Identifier;
+import net.minecraftforge.fml.config.ModConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public class Trackwork implements ModInitializer {
 		TrackworkEntities.initialize();
 		REGISTRATE.register();
 		TrackworkSounds.initialize();
+		ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SERVER, TrackworkConfigs.SERVER_SPEC);
 	}
 
 	public static Identifier getResource(String path) {

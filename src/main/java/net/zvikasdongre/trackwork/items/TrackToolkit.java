@@ -76,9 +76,7 @@ public class TrackToolkit extends Item {
                 case OFFSET -> {
                     BlockEntity be = level.getBlockEntity(pos);
 
-                    AllSoundEvents.WRENCH_ROTATE.playOnServer(player.getWorld(), pos, 1, player.getRandom().nextFloat() + .5f);
-//                    player.playSound(;, 1.0f, 0.8f + 0.2f * player.getRandom().nextFloat());
-
+                    player.playSound(TrackworkSounds.POWER_TOOL, 1.0f, player.getRandom().nextFloat() + .5f);
                     if (be instanceof SuspensionTrackBlockEntity se) {
                         Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getBlockPos());
                         if (ship == null) return ActionResult.FAIL;
@@ -96,7 +94,7 @@ public class TrackToolkit extends Item {
                 default -> {
                     Block hitBlock = level.getBlockState(pos).getBlock();
 
-                    player.playSound(TrackworkSounds.POWER_TOOL, 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());
+                    player.playSound(TrackworkSounds.SPRING_TOOL, 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());
 
                     boolean isSneaking = player.isSneaking();
                     if (hitBlock instanceof TrackBaseBlock<?>) {

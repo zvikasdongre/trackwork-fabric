@@ -12,25 +12,28 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.RaycastContext;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
+import net.zvikasdongre.trackwork.TrackworkDamageTypes;
 import net.zvikasdongre.trackwork.TrackworkSounds;
 import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
+import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
 import net.zvikasdongre.trackwork.data.SimpleWheelData;
 import net.zvikasdongre.trackwork.forces.SimpleWheelController;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
@@ -125,12 +128,9 @@ public class WheelBlockEntity extends KineticBlockEntity {
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
                 Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackBaseBlockEntity.getActionVec3d(this.getCachedState().get(HORIZONTAL_FACING).getAxis(), this.getSpeed()));
-                this.world.addParticle(new BlockStateParticleEffect(ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
-                        pos.x + (this.random.nextDouble() - 0.5D),
+                world.addParticle(ParticleTypes.FLAME, pos.x + (this.random.nextDouble() - 0.5D),
                         pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
-                );
+                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius, speed.x() * -1.0D, 10.5D, speed.z() * -1.0D);
             }
         }
 
@@ -219,8 +219,28 @@ public class WheelBlockEntity extends KineticBlockEntity {
                     ServerPlayNetworking.send(player, TrackworkPackets.WHEEL_PACKET_ID, buf);
                 }
 
-                // TODO: Entity Damage
-                // TODO: Players don't get pushed, why?
+                // Entity Damage
+                List<LivingEntity> hits = this.world.getEntitiesByClass(LivingEntity.class, new Box(this.getPos()).expand(0, -1, 0).contract(0.5), LivingEntity::isAlive);
+                Vec3d worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3d.ofCenter(this.getPos()))));
+                DamageSource damageSource = new DamageSource(
+                        world.getRegistryManager()
+                                .get(RegistryKeys.DAMAGE_TYPE)
+                                .entryOf(TrackworkDamageTypes.RUN_OVER));
+                for (LivingEntity e : hits) {
+
+//                    if (e instanceof ItemEntity)
+//                        continue;
+//                    if (e instanceof AbstractContraptionEntity)
+//                        continue;
+//                    What is this??
+//                    if (e instanceof ServerPlayerEntity p) {
+//                        ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
+//                    }
+                    Vec3d relPos = e.getPos().subtract(worldPos);
+                    float speed = Math.abs(this.getSpeed());
+                    if (speed > 1) e.damage(damageSource, (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
+                }
+
             }
         }
     }
@@ -368,7 +388,8 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
     @Override
     public float calculateStressApplied() {
-//        TODO: trackwork config
+        if (this.world.isClient || !TrackworkConfigs.enableStress.get() || !this.assembled)
+            return super.calculateStressApplied();
         Ship ship = this.ship.get();
         if (ship == null) return super.calculateStressApplied();
         double mass = ((ServerShip) ship).getInertiaData().getMass();
@@ -378,9 +399,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     }
 
     public float calculateStressApplied(float mass) {
-    //        TODO: trackwork config
-    //        double impact = (mass / 1000) * TrackworkConfigs.server().stressMult.get() * (2.0f * this.wheelRadius);
-        double impact = (mass / 1000) * (2.0f * this.wheelRadius);
+        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius);
         if (impact < 0) {
             impact = 0;
         }

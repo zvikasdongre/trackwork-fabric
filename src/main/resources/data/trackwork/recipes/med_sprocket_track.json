@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "APA",
+    "PTP",
+    "APA"
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "T": {
+      "item": "trackwork:sprocket_track"
+    }
+  },
+  "result": {
+    "item": "trackwork:med_sprocket_track",
+    "count": 1
+  }
+}

@@ -20,6 +20,7 @@ import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.zvikasdongre.trackwork.Trackwork;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkEntities;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
@@ -29,6 +30,7 @@ import net.zvikasdongre.trackwork.entities.TrackBeltEntity;
 import net.zvikasdongre.trackwork.entities.WheelEntity;
 import net.zvikasdongre.trackwork.forces.PhysicsEntityTrackController;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Math;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
@@ -250,7 +252,7 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
     }
 
     public float getSpeed() {
-        return super.getSpeed();
+        return Math.clamp(-TrackworkConfigs.maxRPM.get(), TrackworkConfigs.maxRPM.get(), super.getSpeed());
     }
 
     @Override
@@ -282,29 +284,23 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
     }
 
     public float calculateStressApplied() {
-        if (!this.getWorld().isClient()
-                && this.assembled
-                && this.getCachedState().get(TrackBaseBlock.PART) == TrackBaseBlock.TrackPart.START) {
-            Ship ship = this.ship.get();
-            if (ship == null) {
-                return super.calculateStressApplied();
-            } else {
-                double mass = ((ServerShip)ship).getInertiaData().getMass();
-                float impact = this.calculateStressApplied((float)mass);
-                this.lastStressApplied = impact;
-                return impact;
-            }
-        } else {
-            return super.calculateStressApplied();
-        }
+        if (this.world.isClient || !TrackworkConfigs.enableStress.get() ||
+                !this.assembled || this.getCachedState().get(TrackBaseBlock.PART) != TrackBaseBlock.TrackPart.START) return super.calculateStressApplied();
+
+        Ship ship = this.ship.get();
+        if (ship == null) return super.calculateStressApplied();
+        double mass = ((ServerShip) ship).getInertiaData().getMass();
+        float impact = this.calculateStressApplied((float) mass);
+        this.lastStressApplied = impact;
+        return impact;
     }
 
     public float calculateStressApplied(float mass) {
-        float impact = (float)((double)mass * (Double) 0.1 * (double)(2.0F * this.wheelRadius));
+        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius);
         if (impact < 0.0F) {
             impact = 0.0F;
         }
 
-        return impact;
+        return (float) impact;
     }
 }
