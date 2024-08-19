@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "trackwork",
-  "version": "1.0.0",
+  "version": "1.0.1-beta",
   "name": "Trackwork",
   "description": "An addon for VS2 and Create that adds track treads to traverse terrain! Ported to Fabric.",
   "authors": [
@@ -10,8 +10,8 @@
     "Endalion's cat"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/zvikasdongre/trackwork-fabric",
+    "sources": "https://github.com/zvikasdongre/trackwork-fabric"
   },
   "license": "MIT",
   "icon": "assets/trackwork/icon.png",
@@ -35,7 +35,8 @@
     "minecraft": "~1.20.1",
     "java": ">=17",
     "fabric-api": "*",
-    "create": ">=0.5.1-f"
+    "create": ">=0.5.1-f",
+    "valkyrienskies": "*"
   },
   "suggests": {}
 }

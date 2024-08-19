@@ -105,7 +105,7 @@ public class PhysicsEntityTrackController implements ShipForcesInducer {
          Vector3dc wheelAxis = shipTransform.getShipToWorldRotation().transform(data.wheelAxis, new Vector3d());
          double wheelSpeed = wheel.getPoseVel().getOmega().dot(wheelAxis);
          double slip = Math.clamp(-3, 3, -data.trackRPM - wheelSpeed);
-         Vector3dc driveTorque = wheelAxis.mul(-slip * m * 0.4 * coefficientOfPower, new Vector3d());
+         Vector3dc driveTorque = wheelAxis.mul(Math.clamp(-3, 3, data.trackRPM) * m * coefficientOfPower, new Vector3d());
          return new Pair<>(new Vector3d(0), driveTorque);
       }
       return null;

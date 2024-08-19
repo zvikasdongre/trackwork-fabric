@@ -119,20 +119,25 @@ public class WheelBlockEntity extends KineticBlockEntity {
             return;
         }
 
-        // FIXME: Ground particles
+        // Ground particles
         if (this.world.isClient && this.ship.get() != null && Math.abs(this.getSpeed()) > 64) {
             Vector3d pos = toJOML(Vec3d.ofBottomCenter(this.getPos()));
-            Vector3dc ground = VSGameUtilsKt.getWorldCoordinates(this.world, this.getPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
+            Vector3d ground = VSGameUtilsKt.getWorldCoordinates(this.world, this.getPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
             BlockPos blockpos = BlockPos.ofFloored(toMinecraft(ground));
             BlockState blockstate = this.world.getBlockState(blockpos);
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
                 Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackBaseBlockEntity.getActionVec3d(this.getCachedState().get(HORIZONTAL_FACING).getAxis(), this.getSpeed()));
-                world.addParticle(ParticleTypes.FLAME, pos.x + (this.random.nextDouble() - 0.5D),
+                world.addParticle(new BlockStateParticleEffect(
+                                ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
+                        pos.x + (this.random.nextDouble() - 0.5D),
                         pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius, speed.x() * -1.0D, 10.5D, speed.z() * -1.0D);
+                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
+                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
+                );
             }
         }
+
 
         // Freespin check
         Direction dir = this.getCachedState().get(HORIZONTAL_FACING);

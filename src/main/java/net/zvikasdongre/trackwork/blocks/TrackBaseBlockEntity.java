@@ -19,7 +19,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
-//import net.zvikasdongre.trackwork_fabric.network.ThrowTrackPacket;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;

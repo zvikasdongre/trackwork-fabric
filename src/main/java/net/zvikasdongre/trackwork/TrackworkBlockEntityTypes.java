@@ -37,19 +37,19 @@ public class TrackworkBlockEntityTypes {
 
     public static final BlockEntityEntry<SprocketBlockEntity> SPROCKET_TRACK = REGISTRATE
             .blockEntity("sprocket_track", SprocketBlockEntity::new)
-            .instance(() -> SprocketInstance::new)
+            .instance(() -> ShaftInstance::new)
             .validBlocks(TrackworkBlocks.SPROCKET_TRACK)
             .renderer(() -> SprocketRenderer::new)
             .register();
     public static final BlockEntityEntry<SprocketBlockEntity> LARGE_SPROCKET_TRACK = REGISTRATE
             .blockEntity("large_sprocket_track", SprocketBlockEntity::large)
-            .instance(() -> SprocketInstance::new)
+            .instance(() -> ShaftInstance::new)
             .validBlocks(TrackworkBlocks.LARGE_SPROCKET_TRACK)
             .renderer(() -> SprocketRenderer::new)
             .register();
     public static final BlockEntityEntry<SprocketBlockEntity> MED_SPROCKET_TRACK = REGISTRATE
             .blockEntity("med_sprocket_track", SprocketBlockEntity::med)
-            .instance(() -> SprocketInstance::new)
+            .instance(() -> ShaftInstance::new)
             .validBlocks(TrackworkBlocks.MED_SPROCKET_TRACK)
             .renderer(() -> SprocketRenderer::new)
             .register();

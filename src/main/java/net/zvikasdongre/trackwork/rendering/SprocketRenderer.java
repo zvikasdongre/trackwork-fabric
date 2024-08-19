@@ -37,22 +37,20 @@ public class SprocketRenderer extends KineticBlockEntityRenderer<SprocketBlockEn
             angleForBE *= -1.0F;
         }
 
-        float yRot = trackAxis == Axis.X ? 0.0F : 90.0F;
-        // This if statement is here because, for some reason the game was rendering small sprocket twice, in the same place
-        // causing z-fighting, so that is why we skip rendering the small sprocket.
-        if (be.getWheelRadius() > 0.6F) {
-            SuperByteBuffer cogs =
-                    be.getWheelRadius() > 0.8F
-                            ? CachedBufferer.partial(TrackworkPartialModels.LARGE_COGS, state)
-                            : CachedBufferer.partial(TrackworkPartialModels.MED_COGS, state);
+        SuperByteBuffer cogs = be.getWheelRadius() < 0.6f ?
+                CachedBufferer.partial(TrackworkPartialModels.COGS, state) :
+                be.getWheelRadius() > 0.8f ? CachedBufferer.partial(TrackworkPartialModels.LARGE_COGS, state) :
+                        CachedBufferer.partial(TrackworkPartialModels.MED_COGS, state);
 
-            cogs.centre().rotateY(yRot)
-                    .rotateX(-angleForBE)
-                    .translate(0.0, 0.5625, 0.0)
-                    .unCentre();
+        cogs.centre()
+                .rotateY(trackAxis == Direction.Axis.X ? 0 : 90)
+                .rotateX(-angleForBE)
+//                .scale(1, be.getWheelRadius() / 0.5f, be.getWheelRadius() / 0.5f)
+                .translate(0, 9 / 16f, 0)
+                .unCentre();
 
-            cogs.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
-        }
+
+        cogs.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
 
         if (be.assembled) {
             TrackBeltRenderer.renderBelt(

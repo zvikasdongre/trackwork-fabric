@@ -62,7 +62,7 @@ public class WheelEntity extends VSPhysicsEntity {
         public static PhysicsEntityData createBasicData(long shipId, @NotNull ShipTransform transform, double radius, double mass) {
             double inertia = 0.4 * mass * radius * radius;
             ShipInertiaData inertiaData = new ShipInertiaDataImpl(new Vector3d(), mass * radius, new Matrix3d().scale(inertia));
-            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(20 * radius));
+            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(11 * radius));
             return new PhysicsEntityData(
                     shipId,
                     transform,

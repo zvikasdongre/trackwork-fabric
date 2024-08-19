@@ -42,6 +42,7 @@ import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
 import org.valkyrienskies.core.impl.game.ships.ShipTransformImpl;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
+import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock.AXIS;
 
 public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackPointProvider {
     private float wheelRadius;
@@ -155,29 +156,55 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
     }
 
     private PhysEntityTrackData.CreateData constrainWheel(ServerShip ship, long wheelId, Vector3dc trackLocalPos) {
-        ServerWorld slevel = (ServerWorld)this.getWorld();
-        double attachCompliance = 1.0E-8;
-        double attachMaxForce = 1.0E150;
-        double hingeMaxForce = 1.0E75;
-        Vector3dc axis = getAxisAsVec((Axis)this.getCachedState().get(RotatedPillarKineticBlock.AXIS));
+        ServerWorld slevel = (ServerWorld) this.world;
+        double attachCompliance = 1e-8;
+        double attachMaxForce = 1e150;
+        double hingeMaxForce = 1e75;
+        Vector3dc axis = getAxisAsVec(this.getCachedState().get(AXIS));
+//                VSSlideConstraint slider = new VSSlideConstraint(
+//                        ship.getId(),
+//                        wheelId,
+//                        attachCompliance,
+//                        trackLocalPos,
+//                        new Vector3d(0, 0, 0),
+//                        attachMaxForce,
+//                        UP,
+//                        SUSPENSION_TRAVEL
+//                );
         VSAttachmentConstraint slider = new VSAttachmentConstraint(
-                ship.getId(), wheelId, attachCompliance, trackLocalPos, new Vector3d(0.0, 0.0, 0.0), attachMaxForce, 0.0
+                ship.getId(),
+                wheelId,
+                attachCompliance,
+                trackLocalPos,
+                new Vector3d(0, 0, 0),
+                attachMaxForce,
+                0.0
         );
         VSHingeOrientationConstraint axle = new VSHingeOrientationConstraint(
                 ship.getId(),
                 wheelId,
                 attachCompliance,
-                new Quaterniond().fromAxisAngleDeg(axis, 0.0),
-                new Quaterniond().fromAxisAngleDeg(new Vector3d(0.0, 0.0, 1.0), 0.0),
+                new Quaterniond().fromAxisAngleDeg(axis, 0),
+                new Quaterniond().fromAxisAngleDeg(new Vector3d(0, 0, 1), 0),
                 hingeMaxForce
         );
+
+
         Integer sliderId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(slider);
         Integer axleId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(axle);
-        return sliderId != null && axleId != null
-                ? new PhysEntityTrackData.CreateData(
-                trackLocalPos, axis, wheelId, 0.0, 0.0, new VSConstraintAndId(sliderId, slider), new VSConstraintAndId(axleId, axle), (double)this.getSpeed()
-        )
-                : null;
+        if (sliderId == null || axleId == null) return null;
+
+        PhysEntityTrackData.CreateData trackData = new PhysEntityTrackData.CreateData(
+                trackLocalPos,
+                axis,
+                wheelId,
+                0,
+                0,
+                new VSConstraintAndId(sliderId, slider),
+                new VSConstraintAndId(axleId, axle),
+                this.getSpeed()
+        );
+        return trackData;
     }
 
     @Override
