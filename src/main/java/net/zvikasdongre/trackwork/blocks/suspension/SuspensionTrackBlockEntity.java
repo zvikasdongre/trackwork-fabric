@@ -170,7 +170,10 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
         // TODO: degrass + de-snowlayer
 
-        if (this.world.isClient) return;
+        if (this.world.isClient) {
+            return;
+        } 
+        
         if (this.assembled) {
             Vec3d start = Vec3d.ofCenter(this.getPos());
             Direction.Axis axis = this.getCachedState().get(AXIS);
