@@ -13,8 +13,8 @@ public class Trackwork implements ModInitializer {
 	// This logger is used to write text to the console and the log file.
 	// It is considered best practice to use your mod id as the logger's name.
 	// That way, it's clear which mod wrote info, warnings, and errors.
-    public static final Logger LOGGER = LoggerFactory.getLogger("trackwork");
-    public static final String MOD_ID = "trackwork";
+    public static final Logger LOGGER = LoggerFactory.getLogger("trackwork-fabric");
+    public static final String MOD_ID = "trackwork-fabric";
 
 	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID);
 
@@ -23,8 +23,6 @@ public class Trackwork implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
-
-		LOGGER.info("Hello Fabric world!");
 		TrackworkBlocks.initialize();
 		TrackworkItems.initialize();
 		TrackworkItemGroups.initialize();
@@ -36,6 +34,6 @@ public class Trackwork implements ModInitializer {
 	}
 
 	public static Identifier getResource(String path) {
-		return new Identifier("trackwork", path);
+		return new Identifier("trackwork-fabric", path);
 	}
 }

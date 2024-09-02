@@ -1,0 +1,36 @@
+{
+  "block.trackwork-fabric.suspension_track": "Laufrolle für Kette",
+  "block.trackwork-fabric.med_suspension_track": "Mittlere Laufrolle für Kette",
+  "block.trackwork-fabric.large_suspension_track" : "Große Laufrolle für Kette",
+  "block.trackwork-fabric.sprocket_track" : "Kettenrad mit Kette",
+  "block.trackwork-fabric.med_sprocket_track" : "Mittleres Kettenrad mit Kette",
+  "block.trackwork-fabric.large_sprocket_track" : "Großes Kettenrad mit Kette",
+  "block.trackwork-fabric.track_level_controller" : "Federungssteuerung",
+  "block.trackwork-fabric.simple_wheel": "Einfacher Reifen",
+  "block.trackwork-fabric.simple_wheel_part": "Teil eines einfachen Reifens",
+
+  "itemGroup.trackwork": "Trackwork",
+  "item.trackwork-fabric.track_tool_kit" : "Ketten Werkzeugset",
+  "item.trackwork-fabric.track_tool_kit.tooltip.behaviour1" : "Macht die Kettenfederung _fester_, dies kann Probleme auf unebenen Boden verursachen! _Ducken_ um die Federung weicher einzustellen.",
+  "item.trackwork-fabric.track_tool_kit.tooltip.behaviour2" : "_Bewegt die Reifen oder Laufrollen_ rückwärts und vorwärts, je nachdem an welcher Stelle geklickt wird.",
+  "item.trackwork-fabric.track_tool_kit.tooltip.condition1" : "Wenn die Messuhr genutzt wird:",
+  "item.trackwork-fabric.track_tool_kit.tooltip.condition2" : "Wenn der Schlagbohrer benutzt wird:",
+  "item.trackwork-fabric.track_tool_kit.tooltip.summary" : "Verschiedene Werkzeuge um an Kettenantrieben zu arbeiten, verpackt in einem praktischen Set!",
+
+  "death.attack.trackwork-fabric.run_over" : "%1$s ist nun platt wie ein Pfannkuchen",
+  "death.attack.trackwork-fabric.run_over.player" : "%1$s wurde plattgewalzt von %2$s",
+
+  "trackwork-fabric.ponder.tracks.header" : "Kettenkunde für Anfänger",
+  "trackwork-fabric.ponder.tracks.text_1" : "Hinweis: Ketten funktionieren nur an zusammengesetzten VS2 Schiffen!",
+  "trackwork-fabric.ponder.tracks.text_2" : "Genau wie ummantelte Kettenriemen, ",
+  "trackwork-fabric.ponder.tracks.text_3" : "werden Ketten in einer Reihe gebaut.",
+  "trackwork-fabric.ponder.tracks.text_4" : "Die Laufrollen werden über ein verbundenes Kettenrad angetrieben.",
+
+  "trackwork-fabric.ponder.wheels.header" : "Reifen montieren für Anfänger",
+  "trackwork-fabric.ponder.wheels.text_1" : "Hinweis: Reifen funktionieren nur an zusammengesetzten VS2 Schiffen!",
+  "trackwork-fabric.ponder.wheels.text_2" : "Reifen werden, naja, wie Reifen platziert",
+  "trackwork-fabric.ponder.wheels.text_3" : "Treibe die Reifen über die innenliegende Seite an,",
+  "trackwork-fabric.ponder.wheels.text_4" : "oder verbinde sie nicht, dann können sie sich frei drehen.",
+  "trackwork-fabric.ponder.wheels.text_5" : "Nutze ein Redstone Signal um einen Reifen zu lenken,",
+  "trackwork-fabric.ponder.wheels.text_6" : "das gegenüberliegende Rad richtet sich automatisch aus."
+}
