@@ -13,6 +13,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
 import net.zvikasdongre.trackwork.Trackwork;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkPartialModels;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlock;
@@ -79,6 +80,6 @@ public class SuspensionRenderer  extends KineticBlockEntityRenderer<SuspensionTr
 
         @Override
         public int getRenderDistance() {
-            return 256;
+            return TrackworkConfigs.trackRenderDist.get();
         }
 }

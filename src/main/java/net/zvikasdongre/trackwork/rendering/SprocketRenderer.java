@@ -14,6 +14,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.zvikasdongre.trackwork.Trackwork;
+import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkPartialModels;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.sproket.SprocketBlockEntity;
@@ -21,62 +22,60 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactory.Conte
 
 public class SprocketRenderer extends KineticBlockEntityRenderer<SprocketBlockEntity> {
 
-   public SprocketRenderer(Context context) {
-      super(context);
-   }
+    public SprocketRenderer(Context context) {
+        super(context);
+    }
 
-   @Override
-   protected void renderSafe(SprocketBlockEntity be, float partialTicks, MatrixStack ms, VertexConsumerProvider buffer, int light, int overlay) {
-      BlockState state = be.getCachedState();
-      Axis rotationAxis = getRotationAxisOf(be);
-      BlockPos visualPos = be.getPos();
-      float angleForBE = getAngleForBE(be, visualPos, rotationAxis);
-      Axis trackAxis = (Axis)state.get(TrackBaseBlock.AXIS);
-      if (trackAxis == Axis.X) {
-         angleForBE *= -1.0F;
-      }
+    @Override
+    protected void renderSafe(SprocketBlockEntity be, float partialTicks, MatrixStack ms, VertexConsumerProvider buffer, int light, int overlay) {
+        BlockState state = be.getCachedState();
+        Axis rotationAxis = getRotationAxisOf(be);
+        BlockPos visualPos = be.getPos();
+        float angleForBE = getAngleForBE(be, visualPos, rotationAxis);
+        Axis trackAxis = (Axis) state.get(TrackBaseBlock.AXIS);
+        if (trackAxis == Axis.X) {
+            angleForBE *= -1.0F;
+        }
 
-      float yRot = trackAxis == Axis.X ? 0.0F : 90.0F;
-      SuperByteBuffer cogs = be.getWheelRadius() < 0.6F
-         ? CachedBufferer.partial(TrackworkPartialModels.COGS, state)
-         : (
-            be.getWheelRadius() > 0.8F
-               ? CachedBufferer.partial(TrackworkPartialModels.LARGE_COGS, state)
-               : CachedBufferer.partial(TrackworkPartialModels.MED_COGS, state)
-         );
+        SuperByteBuffer cogs = be.getWheelRadius() < 0.6f ?
+                CachedBufferer.partial(TrackworkPartialModels.COGS, state) :
+                be.getWheelRadius() > 0.8f ? CachedBufferer.partial(TrackworkPartialModels.LARGE_COGS, state) :
+                        CachedBufferer.partial(TrackworkPartialModels.MED_COGS, state);
 
-      cogs.centre()
-              .rotateY(yRot)
-              .rotateX(-angleForBE)
-         .translate(0.0, 0.5625, 0.0)
-         .unCentre();
+        cogs.centre()
+                .rotateY(trackAxis == Direction.Axis.X ? 0 : 90)
+                .rotateX(-angleForBE)
+//                .scale(1, be.getWheelRadius() / 0.5f, be.getWheelRadius() / 0.5f)
+                .translate(0, 9 / 16f, 0)
+                .unCentre();
 
-      cogs.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
 
-//      if (true) {
-         TrackBeltRenderer.renderBelt(
-            be,
-            partialTicks,
-            ms,
-            buffer,
-            light,
-            new TrackBeltRenderer.ScalableScroll(be, (float)((double)be.getSpeed() * ((double)be.getWheelRadius() / 0.5)), trackAxis)
-         );
-//      }
-   }
+        cogs.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
 
-   public static float getAngleForBE(KineticBlockEntity be, BlockPos pos, Direction.Axis axis) {
-      float time = AnimationTickHolder.getRenderTime(be.getWorld());
-      float offset = getRotationOffsetForPosition(be, pos, axis);
+        if (be.assembled) {
+            TrackBeltRenderer.renderBelt(
+                    be,
+                    partialTicks,
+                    ms,
+                    buffer,
+                    light,
+                    new TrackBeltRenderer.ScalableScroll(be, (float) ((double) be.getSpeed() * ((double) be.getWheelRadius() / 0.5)), trackAxis)
+            );
+        }
+    }
 
-      return (time * be.getSpeed() * 3.0F / 10.0F + offset) % 360.0F;
-   }
+    public static float getAngleForBE(KineticBlockEntity be, BlockPos pos, Direction.Axis axis) {
+        float time = AnimationTickHolder.getRenderTime(be.getWorld());
+        float offset = getRotationOffsetForPosition(be, pos, axis);
 
-   protected BlockState getRenderedBlockState(SprocketBlockEntity be) {
-      return shaft(getRotationAxisOf(be));
-   }
+        return (time * be.getSpeed() * 3.0F / 10.0F + offset) % 360.0F;
+    }
 
-   public int getRenderDistance() {
-      return 256;
-   }
+    protected BlockState getRenderedBlockState(SprocketBlockEntity be) {
+        return shaft(getRotationAxisOf(be));
+    }
+
+    public int getRenderDistance() {
+        return TrackworkConfigs.trackRenderDist.get();
+    }
 }

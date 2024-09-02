@@ -8,6 +8,7 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.content.kinetics.base.ShaftInstance;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.MathHelper;
 import net.zvikasdongre.trackwork.Trackwork;
@@ -25,36 +26,44 @@ public class SprocketInstance extends ShaftInstance<SprocketBlockEntity> impleme
 
    public SprocketInstance(MaterialManager materialManager, SprocketBlockEntity blockEntity) {
       super(materialManager, blockEntity);
-      this.gantryCogs = (ModelData)this.getTransformMaterial().getModel(TrackworkPartialModels.COGS, this.blockState).createInstance();
-      this.axis = (Axis)this.blockState.get(SuspensionTrackBlock.AXIS);
-      this.rotationAxis = KineticBlockEntityRenderer.getRotationAxisOf(blockEntity);
-      if (this.axis == Axis.X) {
-         this.rotationMult = -1.0F;
-      } else {
-         this.rotationMult = 1.0F;
+
+      gantryCogs = getTransformMaterial()
+              .getModel(TrackworkPartialModels.COGS, blockState)
+              .createInstance();
+
+      axis = blockState.get(SuspensionTrackBlock.AXIS);
+//        alongFirst = blockState.get(SuspensionTrackBlock.AXIS_ALONG_FIRST_COORDINATE);
+      rotationAxis = KineticBlockEntityRenderer.getRotationAxisOf(blockEntity);
+
+      if (axis == Direction.Axis.X)
+         rotationMult = -1;
+      else {
+         rotationMult = 1;
       }
 
-      this.visualPos = blockEntity.getPos();
-      this.animateCogs(this.getCogAngle());
+      visualPos = blockEntity.getPos();
+
+      animateCogs(getCogAngle());
    }
 
+   @Override
    public void beginFrame() {
       float cogAngle = this.getCogAngle();
-      if (MathHelper.approximatelyEquals(cogAngle, this.lastAngle)) return;
+      if (MathHelper.approximatelyEquals(cogAngle, lastAngle)) return;
       this.animateCogs(cogAngle);
    }
 
    private float getCogAngle() {
-      return SprocketRenderer.getAngleForBE(this.blockEntity, this.visualPos, this.rotationAxis) * this.rotationMult;
+      return SprocketRenderer.getAngleForBE(blockEntity, visualPos, rotationAxis) * rotationMult;
    }
 
    private void animateCogs(float cogAngle) {
       gantryCogs.loadIdentity()
               .translate(getInstancePosition())
               .centre()
-              .rotateY(this.axis == Axis.X ? 0.0 : 90.0)
-              .rotateX(-cogAngle)
-              .translate(0.0, 0.5625, 0.0)
+              .rotateY(axis == Direction.Axis.X ? 0 : 90)
+              .rotateX(-cogAngle * rotationMult)
+              .translate(0, 9 / 16f, 0)
               .unCentre();
    }
 
@@ -63,9 +72,9 @@ public class SprocketInstance extends ShaftInstance<SprocketBlockEntity> impleme
       relight(pos, gantryCogs, rotatingModel);
    }
 
-
+   @Override
    public void remove() {
       super.remove();
-      this.gantryCogs.delete();
+      gantryCogs.delete();
    }
 }

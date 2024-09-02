@@ -2,6 +2,8 @@ package net.zvikasdongre.trackwork.blocks.suspension;
 
 import com.simibubi.create.AllItems;
 import com.simibubi.create.foundation.utility.Lang;
+import com.simibubi.create.AllItems;
+import com.simibubi.create.foundation.utility.Lang;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -26,82 +28,86 @@ import net.minecraft.world.WorldView;
 import net.zvikasdongre.trackwork.TrackworkBlockEntityTypes;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class SuspensionTrackBlock extends TrackBaseBlock<SuspensionTrackBlockEntity> {
-//   public static final DamageSource DAMAGE_SOURCE_TRACK = new DamageSource( new DamageType("trackwork.track", 0));
-   public static final Property<TrackVariant> WHEEL_VARIANT = EnumProperty.of("variant", SuspensionTrackBlock.TrackVariant.class);
+//    public static DamageSource damageSourceTrack = new DamageSource("trackwork.track");
 
-   public SuspensionTrackBlock(Settings settings) {
-      super(settings);
-      this.setDefaultState(this.stateManager.getDefaultState().with(PART, TrackBaseBlock.TrackPart.NONE).with(WHEEL_VARIANT, SuspensionTrackBlock.TrackVariant.WHEEL));
-   }
+    public static final Property<TrackVariant> WHEEL_VARIANT = EnumProperty.of("variant", TrackVariant.class);
 
-   @Override
-   protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-      super.appendProperties(builder.add(WHEEL_VARIANT));
-   }
+    
 
-   @NotNull
-   @Override
-   public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-      ItemStack heldItem = player.getStackInHand(hand);
-      if (AllItems.WRENCH.isIn(heldItem) && state.get(WHEEL_VARIANT) != null) {
-         SuspensionTrackBlock.TrackVariant old = state.get(WHEEL_VARIANT);
-         switch (old) {
-            case WHEEL:
-               world.setBlockState(pos, state.with(WHEEL_VARIANT, SuspensionTrackBlock.TrackVariant.BLANK));
-               break;
-            default:
-               world.setBlockState(pos, state.with(WHEEL_VARIANT, SuspensionTrackBlock.TrackVariant.WHEEL));
-         }
-         return ActionResult.SUCCESS;
-      } else {
-         return super.onUse(state, world, pos, player, hand, hit);
-      }
-   }
+    public SuspensionTrackBlock(Settings settings) {
+        super(settings);
+        this.setDefaultState(this.stateManager.getDefaultState().with(PART, TrackBaseBlock.TrackPart.NONE).with(WHEEL_VARIANT, SuspensionTrackBlock.TrackVariant.WHEEL));
+    }
 
-   @Override
-   public boolean hasShaftTowards(WorldView world, BlockPos pos, BlockState state, Direction face) {
-      return false;
-   }
+    @Override
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+        super.appendProperties(builder.add(WHEEL_VARIANT));
+    }
 
-   public Class<SuspensionTrackBlockEntity> getBlockEntityClass() {
-      return SuspensionTrackBlockEntity.class;
-   }
+    @NotNull
+    @Override
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        ItemStack heldItem = player.getStackInHand(hand);
 
-   @Override
-   public BlockRenderType getRenderType(BlockState state) {
-      return BlockRenderType.MODEL;
-   }
+        if (AllItems.WRENCH.isIn(heldItem)) {
+            if (state.contains(WHEEL_VARIANT)) {
+                TrackVariant old = state.get(WHEEL_VARIANT);
+                switch (old) {
+                    case WHEEL -> world.setBlockState(pos, state.with(WHEEL_VARIANT, TrackVariant.BLANK));
+                    default -> world.setBlockState(pos, state.with(WHEEL_VARIANT, TrackVariant.WHEEL));
+                }
+                ;
+                return ActionResult.SUCCESS;
+            }
+        };
+        return super.onUse(state, world, pos, player, hand, hit);
+    }
 
-   @Override
-   public VoxelShape getCollisionShape(BlockState state, BlockView worldIn, BlockPos pos, ShapeContext context) {
-      return VoxelShapes.empty();
-   }
+    @Override
+    public boolean hasShaftTowards(WorldView world, BlockPos pos, BlockState state, Direction face) {
+        return false;
+    }
 
-   @Override
-   public VoxelShape getOutlineShape(
-           BlockState state,
-           BlockView view,
-           BlockPos pos,
-           ShapeContext context
-   ) {
-      return VoxelShapes.fullCube();
-   }
+    public Class<SuspensionTrackBlockEntity> getBlockEntityClass() {
+        return SuspensionTrackBlockEntity.class;
+    }
 
-   public BlockEntityType<? extends SuspensionTrackBlockEntity> getBlockEntityType() {
-      return TrackworkBlockEntityTypes.SUSPENSION_TRACK.get();
-   }
+    @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
+    }
 
-   public static enum TrackVariant implements StringIdentifiable {
-      WHEEL,
-      WHEEL_ROLLER,
-      ROLLER,
-      BLANK;
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockView worldIn, BlockPos pos, ShapeContext context) {
+        return VoxelShapes.empty();
+    }
 
-      @NotNull
-      public String asString() {
-         return Lang.asId(this.name());
-      }
-   }
+    @Override
+    public VoxelShape getOutlineShape(
+            BlockState state,
+            BlockView view,
+            BlockPos pos,
+            ShapeContext context
+    ) {
+        return VoxelShapes.fullCube();
+    }
+
+    public BlockEntityType<? extends SuspensionTrackBlockEntity> getBlockEntityType() {
+        return TrackworkBlockEntityTypes.SUSPENSION_TRACK.get();
+    }
+
+    public static enum TrackVariant implements StringIdentifiable {
+        WHEEL,
+        WHEEL_ROLLER,
+        ROLLER,
+        BLANK;
+
+        @NotNull
+        public String asString() {
+            return Lang.asId(this.name());
+        }
+    }
 }

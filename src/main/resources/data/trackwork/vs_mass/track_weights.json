@@ -10,7 +10,7 @@
     "friction": 0.0
   },
   {
-    "block": "trackwork:med_phys_track",
+    "block": "trackwork:med_sprocket_track",
     "mass": 525.0,
     "friction": 0.0
   },
@@ -25,7 +25,17 @@
     "friction": 0.0
   },
   {
-    "block": "trackwork:large_phys_track",
+    "block": "trackwork:large_sprocket_track",
+    "mass": 525.0,
+    "friction": 0.0
+  },
+  {
+    "block": "trackwork:simple_wheel",
+    "mass": 525.0,
+    "friction": 0.0
+  },
+  {
+    "block": "trackwork:simple_wheel_part",
     "mass": 525.0,
     "friction": 0.0
   }
