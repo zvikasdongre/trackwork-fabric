@@ -122,7 +122,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
             BlockState blockstate = this.level.getBlockState(blockpos);
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackBaseBlockEntity.getActionVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getSpeed()));
+                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getSpeed()));
                 this.level.addParticle(new BlockParticleOption(
                                 ParticleTypes.BLOCK, blockstate).setPos(blockpos),
                         pos.x + (this.random.nextDouble() - 0.5D),
@@ -155,7 +155,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
             double susScaled = this.suspensionTravel * this.suspensionScale;
             ServerShip ship = (ServerShip)this.ship.get();
             if (ship != null) {
-                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(this.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
+                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
 
 //                 Steering Control
@@ -172,7 +172,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 );
 
                 Vec3 worldSpaceHorizontalOffset = toMinecraft(
-                        ship.getTransform().getShipToWorldRotation().transform(getForwardVec3d(axis, 1), new Vector3d()).mul(horizontalOffset, new Vector3d())
+                        ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1), new Vector3d()).mul(horizontalOffset, new Vector3d())
                 );
 
                 Vector3dc forceVec;
@@ -260,7 +260,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
         Vec3 worldSpacehitExact = bResult.getLocation();
         Vec3 forceNormal = start.subtract(worldSpacehitExact);
         Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(
-                getAxisAsVec(axis).rotateAxis(this.getSteeringValue() * Math.toRadians(30), 0, 1, 0)
+                TrackworkUtil.getAxisAsVec(axis).rotateAxis(this.getSteeringValue() * Math.toRadians(30), 0, 1, 0)
         ));
         return new ClipResult(
                 toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
@@ -293,36 +293,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 new SimpleWheelPacket(this.getBlockPos(), this.wheelTravel, this.getSteeringValue(), this.horizontalOffset));
     }
 
-    protected static Vec3 getActionNormal(Direction.Axis axis) {
-        return switch (axis) {
-            case X -> new Vec3(0, -1, 0);
-            case Y -> new Vec3(0,0, 0);
-            case Z -> new Vec3(0, -1, 0);
-        };
-    }
-
-    protected Vector3d getAxisAsVec(Direction.Axis axis) {
-        return switch (axis) {
-            case X -> new Vector3d(1, 0, 0);
-            case Y -> new Vector3d(0,1, 0);
-            case Z -> new Vector3d(0, 0, 1);
-        };
-    }
-
     /*
         This includes steering!
      */
     public Vector3d getActionVec3d(Direction.Axis axis, float length) {
-        return getForwardVec3d(axis, length)
+        return TrackworkUtil.getForwardVec3d(axis, length)
                 .rotateAxis(this.getSteeringValue() * Math.toRadians(30), 0, 1, 0);
-    }
-
-    public Vector3d getForwardVec3d(Direction.Axis axis, float length) {
-        return switch (axis) {
-            case X -> new Vector3d(0, 0, length);
-            case Y -> new Vector3d(0,0, 0);
-            case Z -> new Vector3d(length, 0, 0);
-        };
     }
 
     public float getFreeWheelAngle(float partialTick) {

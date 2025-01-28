@@ -102,7 +102,7 @@ public class TrackToolkit extends Item {
                         return InteractionResult.SUCCESS;
                     }
                 }
-                default -> {
+                case STIFFNESS -> {
                     Block hitBlock = level.getBlockState(pos).getBlock();
 
                     player.playSound(TrackSounds.SPRING_TOOL.get(), 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());

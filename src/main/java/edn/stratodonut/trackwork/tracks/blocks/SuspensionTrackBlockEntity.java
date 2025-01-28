@@ -5,6 +5,7 @@ import com.simibubi.create.infrastructure.config.AllConfigs;
 import edn.stratodonut.trackwork.TrackDamageSources;
 import edn.stratodonut.trackwork.TrackPackets;
 import edn.stratodonut.trackwork.TrackworkConfigs;
+import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.ducks.MSGPLIDuck;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.data.PhysTrackData;
@@ -139,7 +140,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             BlockState blockstate = this.level.getBlockState(blockpos);
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(getActionVec3d(this.getBlockState().getValue(AXIS), this.getSpeed()));
+                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(AXIS), this.getSpeed()));
                 this.level.addParticle(new BlockParticleOption(
                         ParticleTypes.BLOCK, blockstate).setPos(blockpos),
                         pos.x + (this.random.nextDouble() - 0.5D),
@@ -161,9 +162,9 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             double susScaled = this.suspensionTravel * this.suspensionScale;
             ServerShip ship = (ServerShip)this.ship.get();
             if (ship != null) {
-                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(this.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
+                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
-                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
+                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1), new Vector3d());
                 Vec3 worldSpaceFutureOffset = toMinecraft(
                         worldSpaceForward.mul(0.1 * ship.getVelocity().dot(worldSpaceForward), new Vector3d())
                 );
@@ -178,7 +179,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 if (forceVec.lengthSquared() == 0) {
                     BlockState b = this.level.getBlockState(BlockPos.containing(worldSpaceStart));
                     if (b.getFluidState().is(FluidTags.WATER)) {
-                        forceVec = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
+                        forceVec = ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
                     }
                 }
 
@@ -245,7 +246,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
         Vec3 worldSpacehitExact = bResult.getLocation();
         Vec3 forceNormal = start.subtract(worldSpacehitExact);
-        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(getAxisAsVec(axis)));
+        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getAxisAsVec(axis)));
         return new ClipResult(
                 toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
                 forceNormal,
@@ -255,7 +256,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
     public void setHorizontalOffset(Vector3dc offset) {
         Direction.Axis axis = this.getBlockState().getValue(AXIS);
-        double factor = offset.dot(getActionVec3d(axis, 1));
+        double factor = offset.dot(TrackworkUtil.getForwardVec3d(axis, 1));
         this.horizontalOffset = Math.clamp(-0.5f, 0.5f, Math.round(factor * 8.0f) / 8.0f);
         this.setChanged();
     }

@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.utility.Iterate;
 import edn.stratodonut.trackwork.TrackPackets;
+import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.TrackPart;
 import edn.stratodonut.trackwork.tracks.network.ThrowTrackPacket;
@@ -79,42 +80,13 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
 
     private @Nullable BlockPos nextTrackPosition(BlockState state, BlockPos pos, boolean forward) {
         TrackPart part = state.getValue(PART);
-        Direction next = Direction.get(Direction.AxisDirection.POSITIVE, around(state.getValue(AXIS)));
+        Direction next = Direction.get(Direction.AxisDirection.POSITIVE, TrackworkUtil.around(state.getValue(AXIS)));
 
         int offset = forward ? 1 : -1;
         if (part == TrackPart.END && forward || part == TrackPart.START && !forward)
             return null;
         pos = pos.relative(next, offset);
         return pos;
-    }
-
-    private static Direction.Axis around(Direction.Axis axis) {
-        if (axis.isVertical()) return axis;
-        return (axis == Direction.Axis.X) ? Direction.Axis.Z : Direction.Axis.X;
-    }
-
-    protected static Vec3 getActionNormal(Direction.Axis axis) {
-        return switch (axis) {
-            case X -> new Vec3(0, -1, 0);
-            case Y -> new Vec3(0,0, 0);
-            case Z -> new Vec3(0, -1, 0);
-        };
-    }
-
-    protected static Vector3d getAxisAsVec(Direction.Axis axis) {
-        return switch (axis) {
-            case X -> new Vector3d(1, 0, 0);
-            case Y -> new Vector3d(0,1, 0);
-            case Z -> new Vector3d(0, 0, 1);
-        };
-    }
-
-    public static Vector3d getActionVec3d(Direction.Axis axis, float length) {
-        return switch (axis) {
-            case X -> new Vector3d(0, 0, length);
-            case Y -> new Vector3d(0,0, 0);
-            case Z -> new Vector3d(length, 0, 0);
-        };
     }
 
     public boolean isDetracked() {

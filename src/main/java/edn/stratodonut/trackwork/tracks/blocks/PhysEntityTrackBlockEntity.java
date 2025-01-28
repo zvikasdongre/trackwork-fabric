@@ -2,10 +2,7 @@ package edn.stratodonut.trackwork.tracks.blocks;
 
 import com.mojang.datafixers.util.Pair;
 import com.simibubi.create.foundation.utility.Lang;
-import edn.stratodonut.trackwork.TrackEntityTypes;
-import edn.stratodonut.trackwork.TrackPonders;
-import edn.stratodonut.trackwork.TrackworkConfigs;
-import edn.stratodonut.trackwork.TrackworkMod;
+import edn.stratodonut.trackwork.*;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.TrackBeltEntity;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
@@ -166,7 +163,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         double attachCompliance = 1e-8;
         double attachMaxForce = 1e150;
         double hingeMaxForce = 1e75;
-        Vector3dc axis = getAxisAsVec(this.getBlockState().getValue(AXIS));
+        Vector3dc axis = TrackworkUtil.getAxisAsVec(this.getBlockState().getValue(AXIS));
 //                VSSlideConstraint slider = new VSSlideConstraint(
 //                        ship.getId(),
 //                        wheelId,
