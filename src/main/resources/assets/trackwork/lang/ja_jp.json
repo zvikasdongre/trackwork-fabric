@@ -8,6 +8,8 @@
   "block.trackwork.track_level_controller" : "油圧調整コントローラー",
   "block.trackwork.simple_wheel": "自走タイヤ",
   "block.trackwork.simple_wheel_part": "自走タイヤ部品",
+  "block.trackwork.med_simple_wheel": "中型自走タイヤ",
+  "block.trackwork.med_simple_wheel_part": "中型自走タイヤ部品",
 
   "itemGroup.trackwork": "Trackwork",
   "item.trackwork.track_tool_kit" : "履帯ツールキット",

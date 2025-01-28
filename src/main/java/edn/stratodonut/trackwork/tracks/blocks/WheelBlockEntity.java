@@ -123,14 +123,14 @@ public class WheelBlockEntity extends KineticBlockEntity {
         }
 
         // Ground particles
-        if (this.level.isClientSide && this.ship.get() != null && Math.abs(this.getSpeed()) > 64) {
+        if (this.level.isClientSide && this.ship.get() != null && Math.abs(this.getDrivenSpeed()) > 64) {
             Vector3d pos = toJOML(Vec3.atBottomCenterOf(this.getBlockPos()));
             Vector3dc ground = VSGameUtilsKt.getWorldCoordinates(this.level, this.getBlockPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
             BlockPos blockpos = BlockPos.containing(toMinecraft(ground));
             BlockState blockstate = this.level.getBlockState(blockpos);
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getSpeed()));
+                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getDrivenSpeed()));
                 this.level.addParticle(new BlockParticleOption(
                                 ParticleTypes.BLOCK, blockstate).setPos(blockpos),
                         pos.x + (this.random.nextDouble() - 0.5D),
@@ -159,7 +159,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
             Vec3 start = Vec3.atCenterOf(this.getBlockPos());
             Direction.Axis axis = dir.getAxis();
             double restOffset = this.wheelRadius - 0.5f;
-            float trackRPM = this.getSpeed();
+            float trackRPM = this.getDrivenSpeed();
             double susScaled = this.suspensionTravel * this.suspensionScale;
             ServerShip ship = (ServerShip)this.ship.get();
             if (ship != null) {
@@ -235,7 +235,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                         ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
                     }
                     Vec3 relPos = e.position().subtract(worldPos);
-                    float speed = Math.abs(this.getSpeed());
+                    float speed = Math.abs(trackRPM);
                     if (speed > 1) e.hurt(TrackDamageSources.runOver(this.level), (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
                 }
             }
@@ -329,7 +329,11 @@ public class WheelBlockEntity extends KineticBlockEntity {
                         .transformDirection(this.getActionVec3d(axis, 1))) * 9.3f * 1/wheelRadius);
             }
         }
-        return this.getSpeed();
+        return this.getDrivenSpeed();
+    }
+    
+    public float getDrivenSpeed() {
+        return this.getSpeed() * 1/this.wheelRadius;
     }
 
     @Override

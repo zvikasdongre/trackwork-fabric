@@ -8,6 +8,8 @@
   "block.trackwork.track_level_controller" : "Suspension Controller",
   "block.trackwork.simple_wheel": "Simple Wheel",
   "block.trackwork.simple_wheel_part": "Simple Wheel Part",
+  "block.trackwork.med_simple_wheel": "Medium Simple Wheel",
+  "block.trackwork.med_simple_wheel_part": "Medium Simple Wheel Part",
 
   "itemGroup.trackwork": "Trackwork",
   "item.trackwork.track_tool_kit" : "Track Toolkit",
