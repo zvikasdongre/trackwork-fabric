@@ -49,22 +49,25 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         }
 
         float horizontalOffset = be.getPointHorizontalOffset();
+        float axialOffset = be.getPointAxialOffset();
 
         boolean springFlip = trackDir.getAxisDirection() == Direction.AxisDirection.NEGATIVE;
         if (!springFlip)
             angleForBE *= -1;
-        else
+        else {
             horizontalOffset *= -1;
+            axialOffset *= -1;
+        }
 
         float yRot = state.getValue(HORIZONTAL_FACING).toYRot();
 //        float yRot = (trackAxis == Direction.Axis.X) ? 0 : 90;
         float wheelTravel = be.getWheelTravel(partialTicks) - be.getWheelRadius();
-        double wheelTuck = Math.sqrt(2.25 - Math.min(1, wheelTravel*wheelTravel)) - 1.5;
+        double wheelTuck = Math.sqrt(2.25 - Math.min(1, wheelTravel*wheelTravel)) - 1.5 - axialOffset;
         
         ribTransform(CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB, state), yRot, wheelTravel, ms, buffer, light,
-                new Vec3(horizontalOffset * -axisMult, 0, 0), springFlip);
+                new Vec3(horizontalOffset * -axisMult, 0, axialOffset), springFlip);
         ribTransform(CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB_UPPER, state), yRot, wheelTravel, ms, buffer, light,
-                new Vec3(horizontalOffset * -axisMult, -9/16f, 0), false);
+                new Vec3(horizontalOffset * -axisMult, -9/16f, axialOffset), false);
 
 //        19.5
         final BiConsumer<SuperByteBuffer, Float> springTransform = (spring, angle) ->
@@ -92,7 +95,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
             SuperByteBuffer springBase = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_BASE, state);
             springBase.centre().rotateY(-yRot);
             springTransform.accept(springBase, 0f);
-            springBase.translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 0, 0)
+            springBase.translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 0, axialOffset)
                     .unCentre();
             springBase.renderInto(ms, buffer.getBuffer(RenderType.solid()));
 
@@ -101,8 +104,8 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
             springCoil.centre().rotateY(-yRot);
             springTransform.accept(springCoil, springAngle);
             springCoil
-                    .translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 7/16f, 0)
-                    .scale(1, (float) scaleLength / (18f/16), 1)
+                    .translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 7/16f, axialOffset)
+                    .scale(1, (float) scaleLength / (17f/16), 1)
                     .translate(0, -7/16f, 0)
                     .unCentre();
             springCoil.renderInto(ms, buffer.getBuffer(RenderType.cutout()));
@@ -129,7 +132,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
                                     Vec3 offset, boolean flip) {
         rib.centre()
                 .rotateY(-yRot)
-                .translate(offset.x, -8/16f - offset.y, 1.5)
+                .translate(offset.x, -8/16f - offset.y, 1.5 + offset.z)
                 .rotateX(-Math.toDegrees(Math.atan((wheelTravel + 0.3f) / 1.1)))
                 .rotateZ(flip ? 180 : 0)
                 .translate(0, 8/16f + offset.y, -1.375)

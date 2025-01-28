@@ -62,6 +62,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     private float prevWheelTravel;
     private float prevFreeWheelAngle;
     private float horizontalOffset;
+    private float axialOffset;
     @NotNull
     protected final Supplier<Ship> ship;
 
@@ -174,16 +175,18 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
                 float horizontalOffset = this.getPointHorizontalOffset();
+                float axialOffset = this.getPointAxialOffset();
                 Vec3 worldSpaceFutureOffset = toMinecraft(
                         worldSpaceForward.normalize(Math.clamp(-0.4 - horizontalOffset, 0.4 - horizontalOffset, 0.05 * ship.getVelocity().dot(worldSpaceForward)), new Vector3d())
                 );
 
-                Vec3 worldSpaceHorizontalOffset = toMinecraft(
-                        ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1), new Vector3d()).mul(horizontalOffset, new Vector3d())
-                );
+                Vec3 worldSpaceOffset = toMinecraft(
+                        ship.getTransform().getShipToWorldRotation().transform(
+                                TrackworkUtil.getForwardVec3d(axis, 1).mul(horizontalOffset)
+                                        .add(TrackworkUtil.getAxisAsVec(axis).mul(axialOffset)), new Vector3d()));
 
                 Vector3dc forceVec;
-                ClipResult clipResult = clipAndResolve(ship, axis, worldSpaceStart.add(worldSpaceHorizontalOffset).add(worldSpaceFutureOffset), worldSpaceNormal);
+                ClipResult clipResult = clipAndResolve(ship, axis, worldSpaceStart.add(worldSpaceOffset).add(worldSpaceFutureOffset), worldSpaceNormal);
 
                 forceVec = clipResult.trackTangent.mul(this.wheelRadius / 0.5, new Vector3d());
 //                if (forceVec.lengthSquared() == 0) {
@@ -198,7 +201,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 SimpleWheelData.SimpleWheelUpdateData data = new SimpleWheelData.SimpleWheelUpdateData(
-                        toJOML(worldSpaceStart.add(worldSpaceHorizontalOffset)),
+                        toJOML(worldSpaceStart.add(worldSpaceOffset)),
                         forceVec,
                         toJOML(worldSpaceNormal),
                         suspensionForce,
@@ -364,9 +367,31 @@ public class WheelBlockEntity extends KineticBlockEntity {
     public float getSteeringValue() {
         return Math.abs(linkedSteeringValue) > Math.abs(steeringValue) ? linkedSteeringValue : steeringValue;
     }
-
-    public void setHorizontalOffset(Vector3dc offset) {
+    
+    public void setOffset(Vector3dc offset, Direction face) {
         Direction.Axis axis = this.getBlockState().getValue(HORIZONTAL_FACING).getAxis();
+        if (face.getAxis() == axis) {
+            setHorizontalOffset(offset, axis);
+        } else {
+            setAxialOffset(offset, axis);
+        }
+    }
+
+    public void setAxialOffset(Vector3dc offset, Direction.Axis axis) {
+        double factor = offset.dot(TrackworkUtil.getAxisAsVec(axis));
+        this.axialOffset = Math.clamp(-0.4f, 0.4f, Math.round(factor * 8.0f) / 8.0f);
+        this.onLinkedWheel(wbe -> {
+            wbe.axialOffset = -this.axialOffset;
+            wbe.syncToClient();
+        });
+        this.syncToClient();
+    }
+
+    public float getPointAxialOffset() {
+        return this.axialOffset;
+    }
+
+    public void setHorizontalOffset(Vector3dc offset, Direction.Axis axis) {
         double factor = offset.dot(getActionVec3d(axis, 1));
         this.horizontalOffset = Math.clamp(-0.4f, 0.4f, Math.round(factor * 8.0f) / 8.0f);
         this.onLinkedWheel(wbe -> {

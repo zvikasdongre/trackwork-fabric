@@ -97,7 +97,8 @@ public class TrackToolkit extends Item {
                     } else if (be instanceof WheelBlockEntity wbe) {
                         Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
                         if (ship == null) return InteractionResult.FAIL;
-                        wbe.setHorizontalOffset(VectorConversionsMCKt.toJOML(context.getClickLocation().subtract(Vec3.atCenterOf(context.getClickedPos()))));
+                        wbe.setOffset(VectorConversionsMCKt.toJOML(context.getClickLocation().subtract(Vec3.atCenterOf(context.getClickedPos()))),
+                                context.getClickedFace());
 
                         return InteractionResult.SUCCESS;
                     }
