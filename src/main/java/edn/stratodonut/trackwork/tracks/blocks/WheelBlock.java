@@ -1,24 +1,82 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
-import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
+import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
+import com.simibubi.create.foundation.utility.Lang;
 import edn.stratodonut.trackwork.TrackBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
+import java.util.function.Supplier;
+
 public class WheelBlock extends HorizontalKineticBlock implements IBE<WheelBlockEntity> {
+    public static final Property<VisualVariant> VISUAL_VARIANT = EnumProperty.create("variant", VisualVariant.class);
+
+    public enum VisualVariant implements StringRepresentable {
+        DEFAULT,
+        NO_SPRING;
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return Lang.asId(name());
+        }
+    }
+    
+    @Nonnull
+    private final Supplier<BlockEntityType<WheelBlockEntity>> wbet;
+    
     public WheelBlock(Properties properties) {
         super(properties);
+        this.wbet = TrackBlockEntityTypes.SIMPLE_WHEEL;
     }
 
+    public WheelBlock(Properties properties, Supplier<BlockEntityType<WheelBlockEntity>> wbet) {
+        super(properties);
+        this.wbet = wbet;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(VISUAL_VARIANT));
+    }
+
+    @Override
+    public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand handIn,
+                                          BlockHitResult hit) {
+        ItemStack heldItem = player.getItemInHand(handIn);
+
+        if (AllItems.WRENCH.isIn(heldItem)) {
+            if (state.hasProperty(VISUAL_VARIANT)) {
+                VisualVariant old = state.getValue(VISUAL_VARIANT);
+                switch (old) {
+                    case DEFAULT -> world.setBlockAndUpdate(pos, state.setValue(VISUAL_VARIANT, VisualVariant.NO_SPRING));
+                    default -> world.setBlockAndUpdate(pos, state.setValue(VISUAL_VARIANT, VisualVariant.DEFAULT));
+                }
+                return InteractionResult.SUCCESS;
+            }
+        };
+        return super.use(state, world, pos, player, handIn, hit);
+    }
+    
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction preferred = getPreferredHorizontalFacing(context);
@@ -54,6 +112,6 @@ public class WheelBlock extends HorizontalKineticBlock implements IBE<WheelBlock
 
     @Override
     public BlockEntityType<WheelBlockEntity> getBlockEntityType() {
-        return TrackBlockEntityTypes.SIMPLE_WHEEL.get();
+        return wbet.get();
     }
 }

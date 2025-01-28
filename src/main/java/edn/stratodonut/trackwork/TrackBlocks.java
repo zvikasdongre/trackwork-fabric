@@ -119,23 +119,23 @@ public class TrackBlocks {
                     .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate(BlockStateGen.horizontalBlockProvider(true))
-//                    .onRegister(CreateRegistrate.blockModel(() -> BracketedKineticBlockModel::new))
                     .item()
                     .transform(customItemModel())
                     .register();
 
-    public static final BlockEntry<? extends RotatedPillarBlock> SIMPLE_WHEEL_PART =
-            REGISTRATE.block("simple_wheel_part", (properties) -> new RotatedPillarBlock(properties) {
-                        @Override
-                        public @NotNull VoxelShape getCollisionShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-                            return AllShapes.CRUSHING_WHEEL_COLLISION_SHAPE;
-                        }
-                    })
-                    .initialProperties(() -> Blocks.WHITE_WOOL)
-                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).strength(2.0f, 7.0f).sound(SoundType.WOOL))
+    public static final BlockEntry<WheelBlock> MED_SIMPLE_WHEEL =
+            REGISTRATE.block("med_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.MED_SIMPLE_WHEEL))
+                    .initialProperties(() -> Blocks.RAIL)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
+                    .transform(BlockStressDefaults.setNoImpact())
+                    .transform(pickaxeOnly())
+                    .blockstate(BlockStateGen.horizontalBlockProvider(true))
                     .item()
                     .transform(customItemModel())
                     .register();
+
+    public static final BlockEntry<? extends RotatedPillarBlock> SIMPLE_WHEEL_PART = wheelpart("simple_wheel_part");
+    public static final BlockEntry<? extends RotatedPillarBlock> MED_SIMPLE_WHEEL_PART = wheelpart("med_simple_wheel_part");
 
     public static final BlockEntry<TrackAdjusterBlock> TRACK_LEVEL_CONTROLLER =
             REGISTRATE.block("track_level_controller", TrackAdjusterBlock::new)
@@ -148,5 +148,19 @@ public class TrackBlocks {
                     .transform(customItemModel())
                     .register();
 
+    public static BlockEntry<? extends RotatedPillarBlock> wheelpart(String name) {
+        return REGISTRATE.block(name, (properties) -> new RotatedPillarBlock(properties) {
+                    @Override
+                    public @NotNull VoxelShape getCollisionShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+                        return AllShapes.CRUSHING_WHEEL_COLLISION_SHAPE;
+                    }
+                })
+                .initialProperties(() -> Blocks.WHITE_WOOL)
+                .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).strength(2.0f, 7.0f).sound(SoundType.WOOL))
+                .item()
+                .transform(customItemModel())
+                .register();
+    }
+    
     public static void register() {}
 }

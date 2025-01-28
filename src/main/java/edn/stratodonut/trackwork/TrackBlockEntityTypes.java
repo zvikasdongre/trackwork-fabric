@@ -56,8 +56,13 @@ public class TrackBlockEntityTypes {
 
     public static final BlockEntityEntry<WheelBlockEntity> SIMPLE_WHEEL = REGISTRATE
             .blockEntity("simple_wheel", WheelBlockEntity::new)
-//            .instance(() -> PhysEntityTrackInstance::new, false)
             .validBlocks(TrackBlocks.SIMPLE_WHEEL)
+            .renderer(() -> SimpleWheelRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<WheelBlockEntity> MED_SIMPLE_WHEEL = REGISTRATE
+            .blockEntity("med_simple_wheel", WheelBlockEntity::med)
+            .validBlocks(TrackBlocks.MED_SIMPLE_WHEEL)
             .renderer(() -> SimpleWheelRenderer::new)
             .register();
 
