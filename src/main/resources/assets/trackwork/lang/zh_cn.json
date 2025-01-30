@@ -19,6 +19,8 @@
   "item.trackwork.track_tool_kit.tooltip.condition2" : "当電動工具备用，",
   "item.trackwork.track_tool_kit.tooltip.summary" : "多种履带备用的工具, 包在一套方便的工具包里！",
 
+  "block.trackwork.med_simple_wheel.tooltip.summary" : "专有的主加速器技术让中型跟普通独立轮同样速度！",
+
   "death.attack.trackwork.run_over" : "%1$s 被路杀",
   "death.attack.trackwork.run_over.player" : "%1$s 被 %2$s 丢下车底",
 

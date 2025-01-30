@@ -19,6 +19,8 @@
   "item.trackwork.track_tool_kit.tooltip.condition2" : "When the power wrench is used,",
   "item.trackwork.track_tool_kit.tooltip.summary" : "Multiple tools for working with tracks, packed into one convenient kit!",
 
+  "block.trackwork.med_simple_wheel.tooltip.summary" : "Proprietary Final Drive technology allows this to reach the same speeds as the larger wheel!",
+
   "death.attack.trackwork.run_over" : "%1$s became roadkill",
   "death.attack.trackwork.run_over.player" : "%1$s was thrown under the bus by %2$s",
 

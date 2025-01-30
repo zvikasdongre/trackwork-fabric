@@ -14,7 +14,7 @@ public class TrackPonders {
                         TrackBlocks.MED_PHYS_TRACK, TrackBlocks.MED_SUSPENSION_TRACK)
                 .addStoryBoard("tracks", TrackPonderScenes::trackTutorial);
 
-        HELPER.forComponents(TrackBlocks.SIMPLE_WHEEL)
+        HELPER.forComponents(TrackBlocks.SIMPLE_WHEEL, TrackBlocks.MED_SIMPLE_WHEEL)
                 .addStoryBoard("wheels", TrackPonderScenes::wheelTutorial);
     }
 }
