@@ -1,24 +1,21 @@
 {
   "type": "create:mechanical_crafting",
   "pattern": [
-    " BBB ",
-    "BAPAB",
-    "BPCPB",
-    "BAPAB",
-    " BBB "
+    " KKK ",
+    "KKAKK",
+    "KACAK",
+    "KKAKK",
+    " KKK "
   ],
   "key": {
     "A": {
       "item": "create:andesite_alloy"
     },
-    "P": {
-      "tag": "minecraft:planks"
-    },
     "C": {
       "item": "create:cogwheel"
     },
-    "B": {
-      "item": "create:belt_connector"
+    "K": {
+      "item": "minecraft:dried_kelp"
     }
   },
   "result": {

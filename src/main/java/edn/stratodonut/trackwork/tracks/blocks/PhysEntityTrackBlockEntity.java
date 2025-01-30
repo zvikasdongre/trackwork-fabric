@@ -352,7 +352,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     }
 
     public float calculateStressApplied(float mass) {
-        double impact = (mass / 1000) * TrackworkConfigs.server().stressMult.get() * (2.0f * this.wheelRadius);
+        double impact = (mass / 1000) * TrackworkConfigs.server().stressMult.get() * (2.0f * this.wheelRadius) * 8;
         if (impact < 0) {
             impact = 0;
         }

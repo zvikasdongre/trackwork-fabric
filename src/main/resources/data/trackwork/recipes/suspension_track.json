@@ -2,9 +2,7 @@
   "type": "create:mechanical_crafting",
   "pattern": [
     "  S  ",
-    " PPP ",
     " PCP ",
-    " PPP ",
     " BBB "
   ],
   "key": {
