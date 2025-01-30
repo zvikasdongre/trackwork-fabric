@@ -27,8 +27,9 @@ public class TrackToolkitRenderer extends CustomRenderedItemModelRenderer {
             renderer.render(model.getOriginalModel(), light);
 
         } else if (nbt.contains("Tool")) {
+            ms.translate(1/16f, 1/16f, -1/16f);
             TrackToolkit.TOOL type = TrackToolkit.TOOL.from(nbt.getInt("Tool"));
-
+            
             BakedModel toolModel;
             switch (type) {
                 case OFFSET -> {
