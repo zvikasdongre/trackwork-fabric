@@ -3,10 +3,10 @@ package edn.stratodonut.trackwork;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
-import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipHelper;
-import com.simibubi.create.foundation.item.TooltipModifier;
-import com.simibubi.create.infrastructure.data.CreateDatagen;
+
+import edn.stratodonut.trackwork.client.TrackworkPartialModels;
+import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -42,13 +42,13 @@ public class TrackworkMod
         REGISTRATE.registerEventListeners(modEventBus);
 
         TrackworkConfigs.register(modLoadingContext);
+        TrackSounds.register(modEventBus);
         TrackCreativeTabs.register(modEventBus);
         TrackworkItems.register();
         TrackBlocks.register();
         TrackBlockEntityTypes.register();
         TrackEntityTypes.register();
         TrackPackets.registerPackets();
-        TrackSounds.register(modEventBus);
 
         modEventBus.addListener(EventPriority.LOWEST, TrackDatagen::gatherData);
 

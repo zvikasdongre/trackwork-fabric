@@ -1,7 +1,7 @@
 package edn.stratodonut.trackwork.tracks.render;
 
 import edn.stratodonut.trackwork.TrackworkConfigs;
-import edn.stratodonut.trackwork.TrackworkPartialModels;
+import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;

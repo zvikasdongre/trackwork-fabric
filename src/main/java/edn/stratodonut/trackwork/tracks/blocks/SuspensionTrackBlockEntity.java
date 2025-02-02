@@ -1,12 +1,16 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
 import com.simibubi.create.foundation.damageTypes.CreateDamageSources;
+import com.simibubi.create.foundation.sound.SoundScapes;
 import com.simibubi.create.infrastructure.config.AllConfigs;
+
+import edn.stratodonut.trackwork.TrackAmbientGroups;
 import edn.stratodonut.trackwork.TrackDamageSources;
 import edn.stratodonut.trackwork.TrackPackets;
 import edn.stratodonut.trackwork.TrackworkConfigs;
 import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.ducks.MSGPLIDuck;
+import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.data.PhysTrackData;
 import edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController;
@@ -17,6 +21,8 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -29,6 +35,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -43,6 +53,7 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock.AXIS;
+import static edn.stratodonut.trackwork.TrackSounds.SUSPENSION_CREAK;
 import static edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController.UP;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
@@ -133,21 +144,33 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         }
 
         // Ground particles
-        if (this.level.isClientSide && this.ship.get() != null && Math.abs(this.getSpeed()) > 64) {
+        if (this.level.isClientSide && this.ship.get() != null) {
             Vector3d pos = toJOML(Vec3.atBottomCenterOf(this.getBlockPos()));
             Vector3dc ground = VSGameUtilsKt.getWorldCoordinates(this.level, this.getBlockPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
             BlockPos blockpos = BlockPos.containing(toMinecraft(ground));
             BlockState blockstate = this.level.getBlockState(blockpos);
-            // Is this safe without calling BlockState::addRunningEffects?
-            if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(AXIS), this.getSpeed()));
-                this.level.addParticle(new BlockParticleOption(
-                        ParticleTypes.BLOCK, blockstate).setPos(blockpos),
-                        pos.x + (this.random.nextDouble() - 0.5D),
-                        pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
-                );
+            if (blockstate.isSolid()) {
+                if (Math.abs(this.getSpeed()) > 64) {
+                    // Is this safe without calling BlockState::addRunningEffects?
+                    if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
+                        Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(AXIS), this.getSpeed()));
+                        this.level.addParticle(new BlockParticleOption(
+                                ParticleTypes.BLOCK, blockstate).setPos(blockpos),
+                                pos.x + (this.random.nextDouble() - 0.5D),
+                                pos.y + 0.25D,
+                                pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
+                                speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
+                        );
+                    }
+                }
+
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                    float spd = Math.abs(getSpeed());
+                    float pitch = Mth.clamp((spd / 256f) + .45f, .85f, 1f);
+                    if (spd < 8)
+                        return;
+                    TrackSoundScapes.play(TrackAmbientGroups.TRACK_GROUND_AMBIENT, worldPosition, pitch*0.5f);
+                });
             }
         }
 
@@ -198,10 +221,15 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                         trackRPM
                 );
                 this.suspensionScale = controller.updateTrackBlock(this.trackID, data);
-                float wheelTravelDelta = (float) Math.abs(this.wheelTravel - (suspensionTravel + restOffset));
                 this.prevWheelTravel = this.wheelTravel;
-                this.wheelTravel = (float) (suspensionTravel + restOffset);
+                float newWheelTravel = (float) (suspensionTravel + restOffset);
+                float wheelTravelDelta = newWheelTravel - this.wheelTravel;
                 if (wheelTravelDelta > 0.01f) TrackPackets.getChannel().send(packetTarget(), new SuspensionWheelPacket(this.getBlockPos(), this.wheelTravel));
+                if (wheelTravelDelta < -0.667 && this.random.nextFloat() > 0.8) {
+                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS, Math.max(1.0f, Math.abs(wheelTravelDelta * (this.getSpeed() / 256))*0.5f), 0.3F + 0.4F * this.random.nextFloat());
+                }
+
+                this.wheelTravel = newWheelTravel;
 
                 // Entity Damage
                 // TODO: Players don't get pushed, why?
@@ -228,6 +256,11 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void lazyTick() {
         super.lazyTick();
         if (this.assembled && !this.level.isClientSide && this.ship.get() != null) TrackPackets.getChannel().send(packetTarget(), new SuspensionWheelPacket(this.getBlockPos(), this.wheelTravel));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public void tickAudio() {
     }
 
     public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) { ; }

@@ -1,8 +1,10 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
 import com.mojang.datafixers.util.Pair;
+import com.simibubi.create.foundation.sound.SoundScapes;
 import com.simibubi.create.foundation.utility.Lang;
 import edn.stratodonut.trackwork.*;
+import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.TrackBeltEntity;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
@@ -20,7 +22,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+
 import org.jetbrains.annotations.NotNull;
+import org.joml.Math;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
@@ -255,8 +262,20 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 //                shipMass = (float) ship.getInertiaData().getMass();
             }
         }
+
+        if (level.isClientSide)
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> this::tickAudio);
     }
 
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public void tickAudio() {
+        float spd = Math.abs(getSpeed());
+        float pitch = Mth.clamp((spd / 256f) + .45f, .85f, 1f);
+        if (spd < 8)
+            return;
+        TrackSoundScapes.play(TrackAmbientGroups.TRACK_SPROCKET_AMBIENT, worldPosition, pitch);
+    }
 
 //    @Override
 //    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {

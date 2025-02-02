@@ -1,6 +1,8 @@
-package edn.stratodonut.trackwork;
+package edn.stratodonut.trackwork.client;
 
 import com.jozufozu.flywheel.core.PartialModel;
+
+import edn.stratodonut.trackwork.TrackworkMod;
 
 public class TrackworkPartialModels {
     public static final PartialModel

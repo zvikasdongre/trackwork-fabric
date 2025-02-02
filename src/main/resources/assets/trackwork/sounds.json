@@ -33,5 +33,58 @@
         "type": "event"
       }
     ]
+  },
+  "track_ambient_sprocket": {
+    "subtitle": "subtitle.trackwork.sprocket",
+    "sounds": [
+      {
+        "name": "create:cogs",
+        "type": "file"
+      }
+    ]
+  },
+  "track_ambient_ground_1": {
+    "subtitle": "subtitle.trackwork.track_ambient_ground",
+    "sounds" : [
+      {
+        "name": "minecraft:block.netherrack.hit",
+        "type": "event"
+      }
+    ]
+  },
+  "track_ambient_ground_2": {
+    "sounds" : [
+      {
+        "name": "minecraft:block.gravel.place",
+        "type": "event"
+      }
+    ]
+  },
+
+  "wheel_rocktoss": {
+    "subtitle": "subtitle.trackwork.wheel_rocktoss",
+    "sounds": [
+      {
+        "name": "trackwork:wheel_rocktoss",
+        "type": "file"
+      }
+    ]
+  },
+  "wheel_ambient_ground_1": {
+    "subtitle": "subtitle.trackwork.wheel_ambient_ground",
+    "sounds" : [
+      {
+        "name": "minecraft:block.netherrack.hit",
+        "type": "event"
+      }
+    ]
+  },
+  "wheel_ambient_ground_2": {
+    "sounds" : [
+      {
+        "name": "minecraft:block.gravel.place",
+        "type": "event"
+      }
+    ]
   }
 }

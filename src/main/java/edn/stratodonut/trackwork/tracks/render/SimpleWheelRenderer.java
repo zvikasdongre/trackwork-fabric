@@ -1,13 +1,12 @@
 package edn.stratodonut.trackwork.tracks.render;
 
-import com.jozufozu.flywheel.core.PartialModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.foundation.render.CachedBufferer;
 import com.simibubi.create.foundation.render.SuperByteBuffer;
 import com.simibubi.create.foundation.utility.AnimationTickHolder;
 import edn.stratodonut.trackwork.TrackworkConfigs;
-import edn.stratodonut.trackwork.TrackworkPartialModels;
+import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlock;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,7 +18,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import static com.simibubi.create.content.kinetics.base.HorizontalKineticBlock.HORIZONTAL_FACING;
 
@@ -134,7 +132,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
                 .rotateY(-yRot)
                 .translate(offset.x, -8/16f - offset.y, 1.5 + offset.z)
                 .rotateX(-Math.toDegrees(Math.atan((wheelTravel + 0.3f) / 1.1)))
-                .rotateZ(flip ? 180 : 0)
                 .translate(0, 8/16f + offset.y, -1.375)
                 .unCentre();
         rib.light(light).renderInto(ms, buffer.getBuffer(RenderType.solid()));

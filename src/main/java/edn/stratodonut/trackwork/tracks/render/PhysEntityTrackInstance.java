@@ -1,12 +1,11 @@
 package edn.stratodonut.trackwork.tracks.render;
 
-import edn.stratodonut.trackwork.TrackworkPartialModels;
+import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock;
 import com.jozufozu.flywheel.api.MaterialManager;
 import com.jozufozu.flywheel.api.instance.DynamicInstance;
 import com.jozufozu.flywheel.core.materials.model.ModelData;
-import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.content.kinetics.base.ShaftInstance;
 import net.minecraft.core.BlockPos;

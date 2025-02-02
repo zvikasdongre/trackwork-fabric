@@ -1,14 +1,37 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
+import static com.simibubi.create.content.kinetics.base.HorizontalKineticBlock.HORIZONTAL_FACING;
+import static edn.stratodonut.trackwork.TrackSounds.SUSPENSION_CREAK;
+import static edn.stratodonut.trackwork.tracks.forces.SimpleWheelController.UP;
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
+
+import java.util.List;
+import java.util.Random;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Math;
+import org.joml.Vector3d;
+import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.ServerShip;
+import org.valkyrienskies.core.api.ships.Ship;
+import org.valkyrienskies.mod.common.VSGameUtilsKt;
+
 import com.simibubi.create.content.kinetics.base.KineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.foundation.damageTypes.CreateDamageSources;
 import com.simibubi.create.infrastructure.config.AllConfigs;
+
+import edn.stratodonut.trackwork.TrackAmbientGroups;
 import edn.stratodonut.trackwork.TrackDamageSources;
 import edn.stratodonut.trackwork.TrackPackets;
+import edn.stratodonut.trackwork.TrackSounds;
 import edn.stratodonut.trackwork.TrackworkConfigs;
 import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.ducks.MSGPLIDuck;
+import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.data.SimpleWheelData;
 import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
 import edn.stratodonut.trackwork.tracks.network.SimpleWheelPacket;
@@ -19,7 +42,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -31,25 +53,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Math;
-import org.joml.Vector3d;
-import org.joml.Vector3dc;
-import org.valkyrienskies.core.api.ships.ServerShip;
-import org.valkyrienskies.core.api.ships.Ship;
-import org.valkyrienskies.mod.common.VSGameUtilsKt;
-
-import java.util.List;
-import java.util.Random;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static com.simibubi.create.content.kinetics.base.HorizontalKineticBlock.HORIZONTAL_FACING;
-import static edn.stratodonut.trackwork.TrackSounds.SUSPENSION_CREAK;
-import static edn.stratodonut.trackwork.tracks.forces.SimpleWheelController.UP;
-import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
-import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 
 public class WheelBlockEntity extends KineticBlockEntity {
     private float wheelRadius;
@@ -123,21 +129,33 @@ public class WheelBlockEntity extends KineticBlockEntity {
         }
 
         // Ground particles
-        if (this.level.isClientSide && this.ship.get() != null && Math.abs(this.getWheelSpeed()) > 64) {
+        if (this.level.isClientSide && this.ship.get() != null) {
             Vector3d pos = toJOML(Vec3.atBottomCenterOf(this.getBlockPos()));
             Vector3dc ground = VSGameUtilsKt.getWorldCoordinates(this.level, this.getBlockPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
             BlockPos blockpos = BlockPos.containing(toMinecraft(ground));
             BlockState blockstate = this.level.getBlockState(blockpos);
-            // Is this safe without calling BlockState::addRunningEffects?
-            if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getWheelSpeed()));
-                this.level.addParticle(new BlockParticleOption(
-                                ParticleTypes.BLOCK, blockstate).setPos(blockpos),
-                        pos.x + (this.random.nextDouble() - 0.5D),
-                        pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
-                );
+            if (blockstate.isSolid()) {
+                if (Math.abs(this.getWheelSpeed()) > 64) {
+                    // Is this safe without calling BlockState::addRunningEffects?
+                    if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
+                        Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getWheelSpeed()));
+                        this.level.addParticle(new BlockParticleOption(
+                                        ParticleTypes.BLOCK, blockstate).setPos(blockpos),
+                                pos.x + (this.random.nextDouble() - 0.5D),
+                                pos.y + 0.25D,
+                                pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
+                                speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
+                        );
+                    }
+                }
+
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                    float spd = Math.abs(getSpeed());
+                    float pitch = Mth.clamp((spd / 256f) + .45f, .85f, 1f);
+                    if (spd < 8)
+                        return;
+                    TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_AMBIENT, worldPosition, pitch);
+                });
             }
         }
 
@@ -198,6 +216,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 double suspensionTravel = clipResult.suspensionLength.lengthSqr() == 0 ? susScaled : clipResult.suspensionLength.length() - 0.5;
                 Vector3dc suspensionForce = toJOML(worldSpaceNormal.scale( (susScaled - suspensionTravel))).negate();
+                boolean isOnGround = clipResult.suspensionLength.lengthSqr() != 0;
 
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 SimpleWheelData.SimpleWheelUpdateData data = new SimpleWheelData.SimpleWheelUpdateData(
@@ -207,7 +226,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                         suspensionForce,
                         isFreespin,
                         clipResult.groundShipId,
-                        clipResult.suspensionLength.lengthSqr() != 0,
+                        isOnGround,
                         trackRPM
                 );
                 this.suspensionScale = controller.updateTrackBlock(this.getBlockPos(), data);
@@ -215,6 +234,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 float delta = newWheelTravel - wheelTravel;
                 if (delta < -0.667) {
                     this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS, Math.max(1.0f, Math.abs(delta * (this.getWheelSpeed() / 256))), 0.8F + 0.4F * this.random.nextFloat());
+                }
+                if (isOnGround && this.random.nextFloat() < Math.abs(this.getSpeed() / 256)*0.1) {
+                    this.level.playSound(null, this.getBlockPos(),
+                            TrackSounds.WHEEL_ROCKTOSS.get(), SoundSource.BLOCKS,
+                            Math.max(0.2f, Math.abs(this.getSpeed() / 256)*0.5f),
+                            0.8F + 0.4F * this.random.nextFloat());
                 }
 
                 this.prevWheelTravel = this.wheelTravel;
@@ -246,6 +271,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
     public void lazyTick() {
         super.lazyTick();
         if (this.assembled && !this.level.isClientSide && this.ship.get() != null) this.syncToClient();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public void tickAudio() {
+        return;
     }
 
     public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) { ; }
@@ -341,6 +372,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
         compound.putBoolean("Assembled", this.assembled);
         compound.putFloat("WheelTravel", this.wheelTravel);
         compound.putFloat("HorizontalOffset", this.horizontalOffset);
+        compound.putFloat("AxialOffset", this.axialOffset);
         super.write(compound, clientPacket);
     }
 
@@ -349,6 +381,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
         this.assembled = compound.getBoolean("Assembled");
         this.wheelTravel = compound.getFloat("WheelTravel");
         this.horizontalOffset = compound.getFloat("HorizontalOffset");
+        this.axialOffset = compound.getFloat("AxialOffset");
         this.prevWheelTravel = this.wheelTravel;
         super.read(compound, clientPacket);
     }

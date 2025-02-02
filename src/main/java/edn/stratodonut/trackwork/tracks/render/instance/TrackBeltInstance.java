@@ -8,7 +8,7 @@ import com.jozufozu.flywheel.core.layout.BufferLayout;
 import com.jozufozu.flywheel.core.materials.BasicData;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.render.AllProgramSpecs;
-import edn.stratodonut.trackwork.TrackworkPartialModels;
+import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock;
 import edn.stratodonut.trackwork.tracks.render.TrackBeltRenderer;
