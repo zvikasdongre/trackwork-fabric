@@ -31,10 +31,6 @@ public class TrackSoundScapes {
     public static void play(AmbientGroup group, BlockPos pos, float pitch) {
         if (!AllConfigs.client().enableAmbientSounds.get())
             return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null) {
-            pos = BlockPos.containing(VSGameUtilsKt.toWorldCoordinates(mc.level, Vec3.atCenterOf(pos)));
-        }
         if (!outOfRange(pos))
             addSound(group, pos, pitch);
     }
@@ -86,6 +82,10 @@ public class TrackSoundScapes {
     }
 
     protected static boolean outOfRange(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null) {
+            pos = BlockPos.containing(VSGameUtilsKt.toWorldCoordinates(mc.level, Vec3.atCenterOf(pos)));
+        }
         return !getCameraPos().closerThan(pos, getMaxAmbientSourceDistance());
     }
 

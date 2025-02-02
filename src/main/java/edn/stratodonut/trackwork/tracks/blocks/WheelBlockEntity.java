@@ -19,6 +19,7 @@ import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.physics_api.PoseVel;
 
 import com.simibubi.create.content.kinetics.base.KineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -30,7 +31,6 @@ import edn.stratodonut.trackwork.TrackPackets;
 import edn.stratodonut.trackwork.TrackSounds;
 import edn.stratodonut.trackwork.TrackworkConfigs;
 import edn.stratodonut.trackwork.TrackworkUtil;
-import edn.stratodonut.trackwork.ducks.MSGPLIDuck;
 import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.data.SimpleWheelData;
 import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
@@ -40,7 +40,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -135,26 +134,39 @@ public class WheelBlockEntity extends KineticBlockEntity {
             BlockPos blockpos = BlockPos.containing(toMinecraft(ground));
             BlockState blockstate = this.level.getBlockState(blockpos);
             if (blockstate.isSolid()) {
+                Ship s = this.ship.get();
+                Vector3dc reversedWheelVel = s.getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getWheelSpeed()));
                 if (Math.abs(this.getWheelSpeed()) > 64) {
                     // Is this safe without calling BlockState::addRunningEffects?
                     if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
-                        Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getBlockState().getValue(HORIZONTAL_FACING).getAxis(), this.getWheelSpeed()));
                         this.level.addParticle(new BlockParticleOption(
                                         ParticleTypes.BLOCK, blockstate).setPos(blockpos),
                                 pos.x + (this.random.nextDouble() - 0.5D),
                                 pos.y + 0.25D,
                                 pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                                speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
+                                reversedWheelVel.x() * -1.0D, 10.5D, reversedWheelVel.z() * -1.0D
                         );
                     }
                 }
 
+                // TODO: Slip sounds
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    float spd = Math.abs(getSpeed());
-                    float pitch = Mth.clamp((spd / 256f) + .45f, .85f, 1f);
-                    if (spd < 8)
+                    float wheelSpeed = getWheelSpeed();
+                    float pitch = Mth.clamp((Math.abs(wheelSpeed) / 256f) + .45f, .85f, 3f);
+                    if (Math.abs(wheelSpeed) < 8)
                         return;
                     TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_AMBIENT, worldPosition, pitch);
+
+                    Vector3dc shipSpeed = SimpleWheelController.accumulatedVelocity(s.getTransform(),
+                            new PoseVel(
+                                    s.getTransform().getPositionInWorld(),
+                                    s.getTransform().getShipToWorldRotation(),
+                                    s.getVelocity(),
+                                    s.getOmega()
+                            ), ground);
+                    float slip = (float) reversedWheelVel.negate(new Vector3d()).sub(shipSpeed).length();
+                    pitch = Mth.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
+                    TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_SLIP, worldPosition, pitch);
                 });
             }
         }
@@ -232,15 +244,6 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 this.suspensionScale = controller.updateTrackBlock(this.getBlockPos(), data);
                 float newWheelTravel = (float) (suspensionTravel + restOffset);
                 float delta = newWheelTravel - wheelTravel;
-                if (delta < -0.667) {
-                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS, Math.max(1.0f, Math.abs(delta * (this.getWheelSpeed() / 256))), 0.8F + 0.4F * this.random.nextFloat());
-                }
-                if (isOnGround && this.random.nextFloat() < Math.abs(this.getSpeed() / 256)*0.1) {
-                    this.level.playSound(null, this.getBlockPos(),
-                            TrackSounds.WHEEL_ROCKTOSS.get(), SoundSource.BLOCKS,
-                            Math.max(0.2f, Math.abs(this.getSpeed() / 256)*0.5f),
-                            0.8F + 0.4F * this.random.nextFloat());
-                }
 
                 this.prevWheelTravel = this.wheelTravel;
                 this.wheelTravel = newWheelTravel;
@@ -248,20 +251,26 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 // Entity Damage
                 // TODO: Players don't get pushed, why?
-                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos()).expandTowards(0, -1, 0).deflate(0.5));
+                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos()).deflate(0.5).expandTowards(0, -1.5, 0));
                 Vec3 worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos()))));;
                 for (LivingEntity e : hits) {
-//                    if (e instanceof ItemEntity)
-//                        continue;
-//                    if (e instanceof AbstractContraptionEntity)
-//                        continue;
                     SuspensionTrackBlockEntity.push(e, worldPos);
-                    if (e instanceof ServerPlayer p) {
-                        ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
-                    }
                     Vec3 relPos = e.position().subtract(worldPos);
                     float speed = Math.abs(trackRPM);
                     if (speed > 1) e.hurt(TrackDamageSources.runOver(this.level), (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
+                }
+
+                if (delta < -0.3) {
+                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS,
+                            Math.clamp(0.0f, 2.0f, Math.abs(delta * 3 * (this.getSpeed() / 256))*0.5f),
+                            Math.lerp(1.2f, 0.8f, -delta) + 0.4F * this.random.nextFloat()
+                    );
+                }
+                if (isOnGround && this.random.nextFloat() < Math.abs(this.getSpeed() / 256)*0.1) {
+                    this.level.playSound(null, this.getBlockPos(),
+                            TrackSounds.WHEEL_ROCKTOSS.get(), SoundSource.BLOCKS,
+                            Math.max(0.2f, Math.abs(this.getSpeed() / 256)*0.5f),
+                            0.8F + 0.4F * this.random.nextFloat());
                 }
             }
         }
@@ -271,12 +280,6 @@ public class WheelBlockEntity extends KineticBlockEntity {
     public void lazyTick() {
         super.lazyTick();
         if (this.assembled && !this.level.isClientSide && this.ship.get() != null) this.syncToClient();
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
-    public void tickAudio() {
-        return;
     }
 
     public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) { ; }
@@ -461,6 +464,10 @@ public class WheelBlockEntity extends KineticBlockEntity {
             impact = 0;
         }
         return (float) impact;
+    }
+
+    protected boolean isNoisy() {
+        return false;
     }
 
     public void handlePacket(SimpleWheelPacket p) {

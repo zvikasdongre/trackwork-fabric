@@ -38,8 +38,8 @@
     "subtitle": "subtitle.trackwork.sprocket",
     "sounds": [
       {
-        "name": "create:cogs",
-        "type": "file"
+        "name": "entity.minecart.riding",
+        "type": "event"
       }
     ]
   },
@@ -57,6 +57,14 @@
       {
         "name": "minecraft:block.gravel.place",
         "type": "event"
+      }
+    ]
+  },
+  "track_ground_slip": {
+    "sounds" : [
+      {
+        "name": "trackwork:track_ground_slip",
+        "type": "file"
       }
     ]
   },
@@ -84,6 +92,14 @@
       {
         "name": "minecraft:block.gravel.place",
         "type": "event"
+      }
+    ]
+  },
+  "wheel_ground_slip": {
+    "sounds" : [
+      {
+        "name": "trackwork:wheel_ground_slip",
+        "type": "file"
       }
     ]
   }

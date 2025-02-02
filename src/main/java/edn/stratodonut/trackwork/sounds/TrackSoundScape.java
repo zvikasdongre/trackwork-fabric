@@ -3,6 +3,8 @@ package edn.stratodonut.trackwork.sounds;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.valkyrienskies.mod.common.VSGameUtilsKt;
+
 import com.simibubi.create.foundation.utility.AnimationTickHolder;
 import com.simibubi.create.foundation.utility.VecHelper;
 import com.simibubi.create.infrastructure.config.AllConfigs;
@@ -70,7 +72,11 @@ public class TrackSoundScape {
 	private Vec3 determineMeanPos() {
 		meanPos = Vec3.ZERO;
 		int amount = 0;
+		Minecraft mc = Minecraft.getInstance();
 		for (BlockPos blockPos : TrackSoundScapes.getAllLocations(group, pitchGroup)) {
+			if (mc.level != null) {
+				blockPos = BlockPos.containing(VSGameUtilsKt.toWorldCoordinates(mc.level, Vec3.atCenterOf(blockPos)));
+			}
 			meanPos = meanPos.add(VecHelper.getCenterOf(blockPos));
 			amount++;
 		}

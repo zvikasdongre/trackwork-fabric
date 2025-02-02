@@ -262,9 +262,6 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 //                shipMass = (float) ship.getInertiaData().getMass();
             }
         }
-
-        if (level.isClientSide)
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> this::tickAudio);
     }
 
     @OnlyIn(Dist.CLIENT)
