@@ -1,15 +1,15 @@
 {
   "variants": {
     "axis=x": {
-      "model": "create:block/encased_chain_drive/single",
+      "model": "trackwork:block/track_level_controller",
       "y": 90
     },
     "axis=y": {
-      "model": "create:block/encased_chain_drive/single",
+      "model": "trackwork:block/track_level_controller",
       "x": 90
     },
     "axis=z": {
-      "model": "create:block/encased_chain_drive/single"
+      "model": "trackwork:block/track_level_controller"
     }
   }
 }
