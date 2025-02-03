@@ -118,6 +118,17 @@
 * 1.0.2c
   Added config for wheel pairing distance
   Fixed wheels not syncing on linked steering, horiz distance changes
+* 1.1.0
+  Fix wheels spinning in wrong direction
+  Add Medium wheels
+  Add Axial offset for wheels
+  Increased tracks SU stress
+  Change some recipes
+  Improve toolkit models slightly
+* 1.1.1
+    Fix Axial offset not saving
+    Add many sound effects for wheels/tracks
+    Changed some art assets credits to Kipti
 
  TODO:
   - Fix sprocket torque once and for all
