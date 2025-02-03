@@ -19,6 +19,7 @@ import net.minecraft.world.phys.Vec3;
 public class TrackSoundScape {
 	List<ContinuousSound> continuous;
 	List<RepeatingSound> repeating;
+	private int sound_volume_arg_max = 15;
 	private float pitch;
 	private AmbientGroup group;
 	private Vec3 meanPos;
@@ -38,6 +39,11 @@ public class TrackSoundScape {
 
 	public TrackSoundScape repeating(SoundEvent sound, float relativeVolume, float relativePitch, int delay) {
 		return add(new RepeatingSound(sound, this, pitch * relativePitch, relativeVolume, delay));
+	}
+
+	public TrackSoundScape withArgMax(int max) {
+		this.sound_volume_arg_max = max;
+		return this;
 	}
 
 	public TrackSoundScape add(ContinuousSound continuousSound) {
@@ -95,8 +101,7 @@ public class TrackSoundScape {
 		}
 		int soundCount = TrackSoundScapes.getSoundCount(group, pitchGroup);
 		float max = AllConfigs.client().ambientVolumeCap.getF();
-		float argMax = (float) TrackSoundScapes.SOUND_VOLUME_ARG_MAX;
-		return Mth.clamp(soundCount / (argMax * 10f), 0.025f, max) * distanceMultiplier;
+		return Mth.clamp(soundCount / (sound_volume_arg_max * 10f), 0.025f, max) * distanceMultiplier;
 	}
 
 }

@@ -33,7 +33,7 @@ public class TrackworkConfigs {
     public static class TClient extends ConfigBase {
         public final ConfigBase.ConfigInt trackRenderDist = this.i(256, "trackRenderDist", "Track render distance");
 
-        public final ConfigBase.ConfigInt trackSoundDist = this.i(16, "trackSoundDist", "Track sound distance");
+        public final ConfigBase.ConfigInt trackSoundDist = this.i(16, 1, 64, "trackSoundDist", "Track sound distance");
 
         @Override
         public String getName() {

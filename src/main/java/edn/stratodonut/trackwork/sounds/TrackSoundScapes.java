@@ -24,7 +24,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class TrackSoundScapes {
     static final int UPDATE_INTERVAL = 5;
-    static final int SOUND_VOLUME_ARG_MAX = 15;
     private static final Map<AmbientGroup, Map<PitchGroups.Group, Set<BlockPos>>> counter = new IdentityHashMap<>();
     private static final Map<Pair<AmbientGroup, PitchGroups.Group>, TrackSoundScape> activeSounds = new HashMap<>();
 
