@@ -35,7 +35,7 @@
     ]
   },
   "track_ambient_sprocket": {
-    "subtitle": "subtitle.trackwork.sprocket",
+    "subtitle": "subtitle.trackwork.ambient.track.sprocket",
     "sounds": [
       {
         "name": "entity.minecart.riding",
@@ -44,7 +44,7 @@
     ]
   },
   "track_ambient_ground_1": {
-    "subtitle": "subtitle.trackwork.track_ambient_ground",
+    "subtitle": "subtitle.trackwork.ambient.track.ground",
     "sounds" : [
       {
         "name": "minecraft:block.netherrack.hit",
@@ -70,7 +70,6 @@
   },
 
   "wheel_rocktoss": {
-    "subtitle": "subtitle.trackwork.wheel_rocktoss",
     "sounds": [
       {
         "name": "trackwork:wheel_rocktoss",
@@ -79,7 +78,7 @@
     ]
   },
   "wheel_ambient_ground_1": {
-    "subtitle": "subtitle.trackwork.wheel_ambient_ground",
+    "subtitle": "subtitle.trackwork.ambient.wheel.ground",
     "sounds" : [
       {
         "name": "minecraft:block.netherrack.hit",

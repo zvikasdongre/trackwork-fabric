@@ -24,6 +24,10 @@
   "death.attack.trackwork.run_over" : "%1$s became roadkill",
   "death.attack.trackwork.run_over.player" : "%1$s was thrown under the bus by %2$s",
 
+  "subtitle.trackwork.ambient.track.sprocket" : "Tracks squeak",
+  "subtitle.trackwork.ambient.track.ground" : "Tracks crunch",
+  "subtitle.trackwork.ambient.wheel.ground" : "Wheels roll",
+
   "trackwork.ponder.tracks.header" : "Building Tracks 101",
   "trackwork.ponder.tracks.text_1" : "Disclaimer: Tracks only work on assembled VS2 ships!",
   "trackwork.ponder.tracks.text_2" : "Just like chaindrive blocks, ",
