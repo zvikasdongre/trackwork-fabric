@@ -129,6 +129,8 @@
     Fix Axial offset not saving
     Add many sound effects for wheels/tracks
     Changed some art assets credits to Kipti
+* 1.1.1b
+    Tweak for a sound being too soft
 
  TODO:
   - Fix sprocket torque once and for all

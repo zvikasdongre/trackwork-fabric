@@ -5,8 +5,8 @@ import edn.stratodonut.trackwork.sounds.TrackSoundScape;
 
 public class TrackAmbientGroups {
     public static AmbientGroup TRACK_GROUND_AMBIENT = new AmbientGroup((p, g) -> new TrackSoundScape(p, g)
-            .repeating(TrackSounds.TRACK_AMBIENT_GROUND_1.get(), 0.72f, .75f, 1)
-            .repeating(TrackSounds.TRACK_AMBIENT_GROUND_2.get(), 0.215f, .75f, 2)
+            .repeating(TrackSounds.TRACK_AMBIENT_GROUND_1.get(), 1.545f, .75f, 1)
+            .repeating(TrackSounds.TRACK_AMBIENT_GROUND_2.get(), 0.425f, .75f, 2)
             .withArgMax(32)
     );
 
