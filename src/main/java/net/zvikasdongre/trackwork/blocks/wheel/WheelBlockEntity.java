@@ -34,6 +34,7 @@ import net.zvikasdongre.trackwork.TrackworkSounds;
 import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
 import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
+import net.zvikasdongre.trackwork.blocks.suspension.TrackworkDamageSources;
 import net.zvikasdongre.trackwork.data.SimpleWheelData;
 import net.zvikasdongre.trackwork.forces.SimpleWheelController;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
@@ -227,23 +228,20 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 // Entity Damage
                 List<LivingEntity> hits = this.world.getEntitiesByClass(LivingEntity.class, new Box(this.getPos()).expand(0, -1, 0).contract(0.5), LivingEntity::isAlive);
                 Vec3d worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3d.ofCenter(this.getPos()))));
-                DamageSource damageSource = new DamageSource(
-                        world.getRegistryManager()
-                                .get(RegistryKeys.DAMAGE_TYPE)
-                                .entryOf(TrackworkDamageTypes.RUN_OVER));
                 for (LivingEntity e : hits) {
 
 //                    if (e instanceof ItemEntity)
 //                        continue;
 //                    if (e instanceof AbstractContraptionEntity)
 //                        continue;
+                    SuspensionTrackBlockEntity.push(e, worldPos);
 //                    What is this??
 //                    if (e instanceof ServerPlayerEntity p) {
 //                        ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
 //                    }
                     Vec3d relPos = e.getPos().subtract(worldPos);
                     float speed = Math.abs(this.getSpeed());
-                    if (speed > 1) e.damage(damageSource, (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
+                    if (speed > 1) e.damage(TrackworkDamageSources.runOver(this.world), (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
                 }
 
             }

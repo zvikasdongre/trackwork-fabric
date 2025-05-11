@@ -27,11 +27,11 @@ public class Trackwork implements ModInitializer {
 		LOGGER.info("Hello Fabric world!");
 		TrackworkBlocks.initialize();
 		TrackworkItems.initialize();
-		TrackworkItemGroups.initialize();
 		TrackworkBlockEntityTypes.initialize();
 		TrackworkEntities.initialize();
-		REGISTRATE.register();
 		TrackworkSounds.initialize();
+		REGISTRATE.register();
+		TrackworkItemGroups.initialize();
 		ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SERVER, TrackworkConfigs.SERVER_SPEC);
 	}
 
