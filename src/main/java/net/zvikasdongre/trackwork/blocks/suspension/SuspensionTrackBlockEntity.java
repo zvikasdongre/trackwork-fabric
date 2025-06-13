@@ -23,6 +23,7 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.RaycastContext;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
+import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
@@ -37,7 +38,6 @@ import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
-import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
 
 import java.util.List;
 import java.util.Random;
@@ -165,7 +165,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             BlockState blockstate = this.world.getBlockState(blockpos);
             // Is this safe without calling BlockState::addRunningEffects?
             if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(getActionVec3d(this.getCachedState().get(AXIS), this.getSpeed()));
+                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getCachedState().get(AXIS), this.getSpeed()));
                 world.addParticle(new BlockStateParticleEffect(
                                 ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
                         pos.x + (this.random.nextDouble() - 0.5D),
@@ -187,9 +187,9 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             double susScaled = this.suspensionTravel * this.suspensionScale;
             ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null) {
-                Vec3d worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(VectorConversionsMCKt.toJOMLD(getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
+                Vec3d worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3d worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
-                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
+                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1), new Vector3d());
                 Vec3d worldSpaceFutureOffset = toMinecraft(
                         worldSpaceForward.mul(0.1 * ship.getVelocity().dot(worldSpaceForward), new Vector3d())
                 );
@@ -204,7 +204,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 if (forceVec.lengthSquared() == 0) {
                     BlockState b = this.world.getBlockState(BlockPos.ofFloored(worldSpaceStart));
                     if (b.getFluidState().isIn(FluidTags.WATER)) {
-                        forceVec = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
+                        forceVec = ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
                     }
                 }
 
@@ -271,7 +271,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
         Vec3d worldSpacehitExact = bResult.getPos();
         Vec3d forceNormal = start.subtract(worldSpacehitExact);
-        Vec3d worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(getAxisAsVec(axis)));
+        Vec3d worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getAxisAsVec(axis)));
         return new ClipResult(
                 toJOML(worldSpaceAxis.crossProduct(forceNormal)).normalize(),
                 forceNormal,
@@ -281,7 +281,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
     public void setHorizontalOffset(Vector3dc offset) {
         Direction.Axis axis = this.getCachedState().get(AXIS);
-        double factor = offset.dot(getActionVec3d(axis, 1));
+        double factor = offset.dot(TrackworkUtil.getForwardVec3d(axis, 1));
         this.horizontalOffset = Math.clamp(-0.5f, 0.5f, Math.round(factor * 8.0f) / 8.0f);
         this.markDirty();
     }

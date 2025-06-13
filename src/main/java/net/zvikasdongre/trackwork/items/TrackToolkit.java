@@ -31,26 +31,6 @@ import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
 
 public class TrackToolkit extends Item {
-    public enum TOOL implements StringIdentifiable {
-        STIFFNESS,
-        OFFSET;
-
-        private static final TOOL[] vals = values();
-
-        public static TOOL from(int i) {
-            return vals[i];
-        }
-
-        public static int next(int i) {
-            return (i + 1) % vals.length;
-        }
-
-        @Override
-        public @NotNull String asString() {
-            return Lang.asId(name());
-        }
-    }
-
     public TrackToolkit(Settings properties) {
         super(properties);
     }
@@ -88,7 +68,7 @@ public class TrackToolkit extends Item {
                         return ActionResult.SUCCESS;
                     }
                 }
-                default -> {
+                case STIFFNESS -> {
                     Block hitBlock = level.getBlockState(pos).getBlock();
 
                     player.playSound(TrackworkSounds.SPRING_TOOL, 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());
@@ -150,5 +130,25 @@ public class TrackToolkit extends Item {
             nbt.putInt("Tool", TOOL.next(nbt.getInt("Tool")));
         }
         stack.setNbt(nbt);
+    }
+
+    public enum TOOL implements StringIdentifiable {
+        STIFFNESS,
+        OFFSET;
+
+        private static final TOOL[] vals = values();
+
+        public static TOOL from(int i) {
+            return vals[i];
+        }
+
+        public static int next(int i) {
+            return (i + 1) % vals.length;
+        }
+
+        @Override
+        public @NotNull String asString() {
+            return Lang.asId(name());
+        }
     }
 }

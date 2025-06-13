@@ -15,6 +15,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkEntities;
+import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
@@ -161,7 +162,7 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
         double attachCompliance = 1e-8;
         double attachMaxForce = 1e150;
         double hingeMaxForce = 1e75;
-        Vector3dc axis = getAxisAsVec(this.getCachedState().get(AXIS));
+        Vector3dc axis = TrackworkUtil.getAxisAsVec(this.getCachedState().get(AXIS));
 //                VSSlideConstraint slider = new VSSlideConstraint(
 //                        ship.getId(),
 //                        wheelId,

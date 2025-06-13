@@ -15,14 +15,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Direction.Axis;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
+import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock.TrackPart;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
 import net.zvikasdongre.trackwork.rendering.TrackBeltRenderer;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
 
 import javax.annotation.Nullable;
 
@@ -39,35 +37,6 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
     public TrackBaseBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
         setLazyTickRate(10);
-    }
-
-    private static Axis around(Axis axis) {
-        if (axis.isVertical()) return axis;
-        return (axis == Direction.Axis.X) ? Direction.Axis.Z : Direction.Axis.X;
-    }
-
-    protected static Vec3i getActionNormal(Axis axis) {
-        return switch (axis) {
-            case X -> new Vec3i(0, -1, 0);
-            case Y -> new Vec3i(0, 0, 0);
-            case Z -> new Vec3i(0, -1, 0);
-        };
-    }
-
-    protected static Vector3d getAxisAsVec(Axis axis) {
-        return switch (axis) {
-            case X -> new Vector3d(1, 0, 0);
-            case Y -> new Vector3d(0, 1, 0);
-            case Z -> new Vector3d(0, 0, 1);
-        };
-    }
-
-    public static Vector3d getActionVec3d(Axis axis, float length) {
-        return switch (axis) {
-            case X -> new Vector3d(0, 0, length);
-            case Y -> new Vector3d(0, 0, 0);
-            case Z -> new Vector3d(length, 0, 0);
-        };
     }
 
     @Override
@@ -117,7 +86,7 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
     @Nullable
     private BlockPos nextTrackPosition(BlockState state, BlockPos pos, boolean forward) {
         TrackPart part = state.get(PART);
-        Direction next = Direction.get(Direction.AxisDirection.POSITIVE, around(state.get(AXIS)));
+        Direction next = Direction.get(Direction.AxisDirection.POSITIVE, TrackworkUtil.around(state.get(AXIS)));
 
         int offset = forward ? 1 : -1;
         if (part == TrackPart.END && forward || part == TrackPart.START && !forward)
