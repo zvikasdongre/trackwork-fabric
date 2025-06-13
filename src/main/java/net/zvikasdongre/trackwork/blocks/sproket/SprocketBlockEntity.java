@@ -13,7 +13,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.zvikasdongre.trackwork.Trackwork;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkEntities;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
@@ -216,7 +215,6 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
             this.assemble();
             this.assembleNextTick = false;
         } else if (this.getWorld() == null) {
-            Trackwork.LOGGER.warn("Level is null????");
             return;
         } else {
             if (this.assembled && !this.getWorld().isClient()) {

@@ -15,7 +15,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -186,12 +185,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 ClipResult clipResult = clipAndResolve(ship, axis, worldSpaceStart.add(worldSpaceHorizontalOffset).add(worldSpaceFutureOffset), worldSpaceNormal);
 
                 forceVec = clipResult.trackTangent.mul(this.wheelRadius / 0.5, new Vector3d());
-                if (forceVec.lengthSquared() == 0) {
-                    BlockState b = this.world.getBlockState(BlockPos.ofFloored(worldSpaceStart));
-                    if (b.getFluidState().isIn(FluidTags.WATER)) {
-                        forceVec = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
-                    }
-                }
+//                if (forceVec.lengthSquared() == 0) {
+//                    BlockState b = this.world.getBlockState(BlockPos.ofFloored(worldSpaceStart));
+//                    if (b.getFluidState().isIn(FluidTags.WATER)) {
+//                        forceVec = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
+//                    }
+//                }
 
                 double suspensionTravel = clipResult.suspensionLength.lengthSquared() == 0 ? susScaled : clipResult.suspensionLength.length() - 0.5;
                 Vector3dc suspensionForce = toJOML(worldSpaceNormal.multiply((susScaled - suspensionTravel))).negate();

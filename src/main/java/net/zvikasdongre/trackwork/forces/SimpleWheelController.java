@@ -3,14 +3,14 @@ package net.zvikasdongre.trackwork.forces;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mojang.datafixers.util.Pair;
+import kotlin.jvm.functions.Function1;
 import net.minecraft.util.math.BlockPos;
 import net.zvikasdongre.trackwork.data.SimpleWheelData;
-import org.joml.Vector3f;
-import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.joml.Vector3f;
 import org.valkyrienskies.core.api.ships.PhysShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.ShipForcesInducer;
@@ -36,7 +36,7 @@ public class SimpleWheelController implements ShipForcesInducer {
     @JsonIgnore
     public static final double MAXIMUM_SLIP_LATERAL = MAXIMUM_SLIP * 1.5;
     @JsonIgnore
-    public static final double MAXIMUM_G = 98.1*5;
+    public static final double MAXIMUM_G = 98.1 * 5;
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
     private final HashMap<Long, SimpleWheelData> trackData = new HashMap<>();
 
@@ -49,8 +49,10 @@ public class SimpleWheelController implements ShipForcesInducer {
 
     private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
     private volatile float suspensionStiffness = 1.0f;
+    private float debugTick = 0;
 
-    public SimpleWheelController() {}
+    public SimpleWheelController() {
+    }
 
     public static SimpleWheelController getOrCreate(ServerShip ship) {
         if (ship.getAttachment(SimpleWheelController.class) == null) {
@@ -60,11 +62,17 @@ public class SimpleWheelController implements ShipForcesInducer {
         return ship.getAttachment(SimpleWheelController.class);
     }
 
-    private float debugTick = 0;
+    public static Vector3dc accumulatedVelocity(ShipTransform t, PoseVel pose, Vector3dc worldPosition) {
+        return pose.getVel().add(pose.getOmega().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
+    }
+
+    public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
+        return Arrays.equals(left.toArray(), right.toArray());
+    }
 
     @Override
     public void applyForcesAndLookupPhysShips(@NotNull PhysShip physShip, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
-        while(!this.createdTrackData.isEmpty()) {
+        while (!this.createdTrackData.isEmpty()) {
             Pair<Long, SimpleWheelData.SimpleWheelCreateData> createData = this.createdTrackData.remove();
             this.trackData.put(createData.getFirst(), SimpleWheelData.from(createData.getSecond()));
         }
@@ -78,7 +86,7 @@ public class SimpleWheelController implements ShipForcesInducer {
         this.trackUpdateData.clear();
 
         // Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
-        while(!removedTracks.isEmpty()) {
+        while (!removedTracks.isEmpty()) {
             Long removeId = this.removedTracks.remove();
             this.trackData.remove(removeId);
         }
@@ -97,7 +105,7 @@ public class SimpleWheelController implements ShipForcesInducer {
             }
         });
 
-        if (netLinearForce.isFinite() && netLinearForce.length()/((PhysShipImpl) physShip).getInertia().getShipMass() < MAXIMUM_G) {
+        if (netLinearForce.isFinite() && netLinearForce.length() / ((PhysShipImpl) physShip).getInertia().getShipMass() < MAXIMUM_G) {
             physShip.applyInvariantForce(netLinearForce);
             if (netTorque.isFinite()) physShip.applyInvariantTorque(netTorque);
         }
@@ -111,7 +119,7 @@ public class SimpleWheelController implements ShipForcesInducer {
     private Pair<Vector3dc, Vector3dc> computeForce(SimpleWheelData data, PhysShipImpl ship, double coefficientOfPower, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
         PoseVel pose = ship.getPoseVel();
         ShipTransform shipTransform = ship.getTransform();
-        double m =  ship.getInertia().getShipMass();
+        double m = ship.getInertia().getShipMass();
         double gravity_factor = Math.max(0, shipTransform.getShipToWorldRotation().transform(UP, new Vector3d()).dot(UP));
         Vector3dc trackRelPosShip = data.wheelOriginPosition.sub(shipTransform.getPositionInShip(), new Vector3d());
 //            Vector3dc worldSpaceTrackOrigin = shipTransform.getShipToWorld().transformPosition(data.trackOriginPosition.get(new Vector3d()));
@@ -129,7 +137,7 @@ public class SimpleWheelController implements ShipForcesInducer {
         if (data.isWheelGrounded) {
             double suspensionDelta = velocityAtPosition.dot(trackNormal) + data.getSuspensionCompressionDelta().length();
             double tilt = 1 + this.tilt(trackRelPosShip);
-            tForce.add(data.suspensionCompression.mul(m * 4.0 * coefficientOfPower * this.suspensionStiffness * tilt * gravity_factor, new Vector3d()));
+            tForce.add(data.suspensionCompression.mul(m * 4.0 * coefficientOfPower * this.suspensionStiffness * tilt, new Vector3d()));
             tForce.add(trackNormal.mul(m * 1.2 * -suspensionDelta * coefficientOfPower * this.suspensionStiffness, new Vector3d()));
             // Really half-assed antislip when the spring is stronger than friction (what?)
             if (data.wheelRPM == 0) {
@@ -156,9 +164,9 @@ public class SimpleWheelController implements ShipForcesInducer {
                             .add(lateralSlip.normalize(Math.min(lateralSlip.length(), MAXIMUM_SLIP_LATERAL), new Vector3d()), new Vector3d());
                 }
                 tForce.add(slipVelocity.mul(1.0 * m * coefficientOfPower * gravity_factor, new Vector3d()));
-            } else if (!data.isFreespin) {
-                slipVelocity = surfaceVelocity.normalize(new Vector3d()).mul(slipVelocity.dot(surfaceVelocity.normalize(new Vector3d())), new Vector3d());
-                tForce.add(slipVelocity.normalize(Math.min(slipVelocity.length(), MAXIMUM_SLIP), new Vector3d()).mul(1.0 * m * coefficientOfPower));
+            } else if (!data.isFreespin && data.driveForceVector.length() != 0) {
+                slipVelocity = driveSlip.normalize(Math.min(driveSlip.length(), MAXIMUM_SLIP), new Vector3d());
+                tForce.add(slipVelocity.mul(1.0 * m * coefficientOfPower * gravity_factor, new Vector3d()));
             }
         }
 
@@ -167,17 +175,13 @@ public class SimpleWheelController implements ShipForcesInducer {
         return new Pair<>(tForce, torque);
     }
 
-    public static Vector3dc accumulatedVelocity(ShipTransform t, PoseVel pose, Vector3dc worldPosition) {
-        return pose.getVel().add(pose.getOmega().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
-    }
-
     public final void addTrackBlock(BlockPos pos, SimpleWheelData.SimpleWheelCreateData data) {
         this.createdTrackData.add(new Pair<>(pos.asLong(), data));
     }
 
     public final double updateTrackBlock(BlockPos pos, SimpleWheelData.SimpleWheelUpdateData data) {
         this.trackUpdateData.put(pos.asLong(), data);
-        return Math.round(this.suspensionAdjust.y()*16) / 16. * ((9+1/(this.suspensionStiffness*2 - 1))/10);
+        return Math.round(this.suspensionAdjust.y() * 16) / 16. * ((9 + 1 / (this.suspensionStiffness * 2 - 1)) / 10);
     }
 
     public final void removeTrackBlock(BlockPos pos) {
@@ -192,23 +196,19 @@ public class SimpleWheelController implements ShipForcesInducer {
     public final void adjustSuspension(Vector3f delta) {
         Vector3dc old = this.suspensionAdjust;
         this.suspensionAdjust = new Vector3d(
-                Math.clamp(-0.5, 0.5, old.x() + delta.x()*5),
+                Math.clamp(-0.5, 0.5, old.x() + delta.x() * 5),
                 Math.clamp(0.1, 1, old.y() + delta.y()),
-                Math.clamp(-0.5, 0.5, old.z() + delta.z()*5)
+                Math.clamp(-0.5, 0.5, old.z() + delta.z() * 5)
         );
     }
 
     public final void resetSuspension() {
         double y = this.suspensionAdjust.y();
-        this.suspensionAdjust = new Vector3d(0, y,0);
+        this.suspensionAdjust = new Vector3d(0, y, 0);
     }
 
     private double tilt(Vector3dc relPos) {
         return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
-    }
-
-    public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
-        return Arrays.equals(left.toArray(), right.toArray());
     }
 
     public boolean equals(Object other) {
