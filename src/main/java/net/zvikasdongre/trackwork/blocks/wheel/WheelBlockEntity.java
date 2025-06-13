@@ -169,8 +169,8 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 int bestSignal = this.world.getReceivedRedstonePower(this.getPos());
                 float oldSteeringValue = this.steeringValue;
                 this.steeringValue = bestSignal / 15f * ((dir.getDirection() == Direction.AxisDirection.POSITIVE ? 1 : -1));
-                this.onLinkedWheel(wbe -> wbe.linkedSteeringValue = this.steeringValue);
                 float deltaSteeringValue = oldSteeringValue - this.steeringValue;
+                this.onLinkedWheel(wbe -> wbe.setLinkedSteeringValue(this.steeringValue));
                 Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
                 float horizontalOffset = this.getPointHorizontalOffset();
                 Vec3d worldSpaceFutureOffset = toMinecraft(
@@ -217,7 +217,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 this.wheelTravel = newWheelTravel;
 
                 if (Math.abs(delta) > 0.01f || Math.abs(deltaSteeringValue) > 0.05f) {
-                    this.sendWheelPacket();
+                    this.syncToClient();
                 }
 
                 // Entity Damage
@@ -275,7 +275,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
     protected void onLinkedWheel(Consumer<WheelBlockEntity> action) {
         Direction dir = this.getCachedState().get(HORIZONTAL_FACING);
-        for (int i = 1; i <= 6; i++) {
+        for (int i = 1; i <= TrackworkConfigs.wheelPairDist.get() + 1; i++) {
             BlockPos bpos = this.getPos().offset(dir, i);
             BlockEntity be = this.world.getBlockEntity(bpos);
             if (be instanceof WheelBlockEntity wbe) {
@@ -360,6 +360,9 @@ public class WheelBlockEntity extends KineticBlockEntity {
         return Math.abs(linkedSteeringValue) > Math.abs(steeringValue) ? linkedSteeringValue : steeringValue;
     }
 
+    /**
+     * For ponder usage only!
+     */
     public void setSteeringValue(float value) {
         this.steeringValue = value;
     }
@@ -368,7 +371,11 @@ public class WheelBlockEntity extends KineticBlockEntity {
         Direction.Axis axis = this.getCachedState().get(HORIZONTAL_FACING).getAxis();
         double factor = offset.dot(getActionVec3d(axis, 1));
         this.horizontalOffset = Math.clamp(-0.4f, 0.4f, Math.round(factor * 8.0f) / 8.0f);
-        this.onLinkedWheel(wbe -> wbe.horizontalOffset = this.horizontalOffset);
+        this.onLinkedWheel(wbe -> {
+            wbe.horizontalOffset = this.horizontalOffset;
+            wbe.syncToClient();
+        });
+        this.syncToClient();
     }
 
     public float getPointHorizontalOffset() {
@@ -402,7 +409,14 @@ public class WheelBlockEntity extends KineticBlockEntity {
         this.horizontalOffset = horizontalOffset;
     }
 
-    private void sendWheelPacket() {
+    public void setLinkedSteeringValue(float v) {
+        float old = this.getSteeringValue();
+        this.linkedSteeringValue = v;
+        float delta = this.getSteeringValue() - old;
+        if (Math.abs(delta) > 0.05f) this.syncToClient();
+    }
+
+    private void syncToClient() {
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeBlockPos(this.getPos());
         buf.writeFloat(this.wheelTravel);
@@ -417,7 +431,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     @Override
     public void lazyTick() {
         super.lazyTick();
-        if (this.assembled && !this.world.isClient && this.ship.get() != null) this.sendWheelPacket();
+        if (this.assembled && !this.world.isClient && this.ship.get() != null) this.syncToClient();
     }
 
     public record ClipResult(Vector3dc trackTangent, Vec3d suspensionLength, @Nullable Long groundShipId) {
