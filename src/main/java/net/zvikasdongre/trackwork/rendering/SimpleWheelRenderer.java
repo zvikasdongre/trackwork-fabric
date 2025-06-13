@@ -14,6 +14,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkPartialModels;
+import net.zvikasdongre.trackwork.blocks.wheel.WheelBlock;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
 
 import java.util.function.BiConsumer;
@@ -61,7 +62,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
 
         float axisMult = -1;
         if (trackDir.getAxis() == Direction.Axis.X) {
-            angleForBE *= -1;
             axisMult = 1;
         }
 
@@ -101,31 +101,34 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         double scaleLength = Math.sqrt(springEndPointLength * springEndPointLength + diagonalLength * diagonalLength
                 - 2 * springEndPointLength * diagonalLength * Math.cos(Math.PI / 2 + ribAngle - diagonalRibOffset));
 
-        float springAngle = (float) (Math.toDegrees(Math.asin((springEndPointLength * Math.sin(Math.PI / 2 + ribAngle
-                - diagonalRibOffset)) / scaleLength) + diagonalSpringOffset - Math.PI / 2));
+        if (state.contains(WheelBlock.VISUAL_VARIANT)
+                && state.get(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.NO_SPRING) {
+            float springAngle = (float) (Math.toDegrees(Math.asin((springEndPointLength * Math.sin(Math.PI / 2 + ribAngle
+                    - diagonalRibOffset)) / scaleLength) + diagonalSpringOffset - Math.PI / 2));
 
-        float time = AnimationTickHolder.getRenderTime(be.getWorld());
-
-        SuperByteBuffer springBase = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_BASE, state);
-        springBase.centre().rotateY(-yRot);
-        springTransform.accept(springBase, 0f);
-        springBase.translate((springFlip ? 12 / 16f : 0) + horizontalOffset * -axisMult, 0, 0)
-                .unCentre();
-        springBase.renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
+            SuperByteBuffer springBase = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_BASE, state);
+            springBase.centre().rotateY(-yRot);
+            springTransform.accept(springBase, 0f);
+            springBase.translate((springFlip ? 12 / 16f : 0) + horizontalOffset * -axisMult, 0, 0)
+                    .unCentre();
+            springBase.renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
 
 //        float springScale = (0.6f * wheelTravel + 1f) / (13.5f/16);
-        SuperByteBuffer springCoil = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_COIL, state);
-        springCoil.centre().rotateY(-yRot);
-        springTransform.accept(springCoil, springAngle);
-        springCoil
-                .translate((springFlip ? 12 / 16f : 0) + horizontalOffset * -axisMult, 7 / 16f, 0)
-                .scale(1, (float) scaleLength / (18f / 16), 1)
-                .translate(0, -7 / 16f, 0)
-                .unCentre();
-        springCoil.renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));
+            SuperByteBuffer springCoil = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_COIL, state);
+            springCoil.centre().rotateY(-yRot);
+            springTransform.accept(springCoil, springAngle);
+            springCoil
+                    .translate((springFlip ? 12 / 16f : 0) + horizontalOffset * -axisMult, 7 / 16f, 0)
+                    .scale(1, (float) scaleLength / (18f / 16), 1)
+                    .translate(0, -7 / 16f, 0)
+                    .unCentre();
+            springCoil.renderInto(ms, buffer.getBuffer(RenderLayer.getCutout()));
+        }
 
         {
-            SuperByteBuffer wheels = CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL, state);
+            SuperByteBuffer wheels = be.getWheelRadius() > 0.8f ?
+                    CachedBufferer.partial(TrackworkPartialModels.SIMPLE_WHEEL, state) :
+                    CachedBufferer.partial(TrackworkPartialModels.MED_SIMPLE_WHEEL, state);
             wheels.centre()
                     .rotateY(-yRot + be.getSteeringValue() * 30)
 //                    .translate(0, be.getWheelRadius() , 0)

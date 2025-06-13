@@ -74,6 +74,13 @@ public class WheelBlockEntity extends KineticBlockEntity {
         this.setLazyTickRate(10);
     }
 
+    public static WheelBlockEntity med(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        WheelBlockEntity be = new WheelBlockEntity(type, pos, state);
+        be.wheelRadius = 0.75f;
+        be.suspensionTravel = 1.5f;
+        return be;
+    }
+
     @Override
     public void remove() {
         super.remove();
@@ -288,19 +295,18 @@ public class WheelBlockEntity extends KineticBlockEntity {
         return (this.prevFreeWheelAngle + this.getWheelSpeed() * partialTick * 3f / 10) % 360;
     }
 
-    // To future dev, this does not take wheel radius into account
     public float getWheelSpeed() {
         if (this.isFreespin) {
             Ship s = this.ship.get();
             if (s != null) {
                 Vector3d vel = s.getVelocity().add(s.getOmega().cross(s.getShipToWorld().transformPosition(
-                        toJOML(Vec3d.ofBottomCenter(this.getPos())), new Vector3d()).sub(
-                        s.getTransform().getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d()
+                        toJOML(Vec3d.ofBottomCenter(this.getPos()))).sub(
+                        s.getTransform().getPositionInWorld()), new Vector3d()), new Vector3d()
                 );
                 Direction.Axis axis = this.getCachedState().get(HORIZONTAL_FACING).getAxis();
                 int sign = axis == Direction.Axis.X ? 1 : -1;
                 return sign * (float) TrackworkUtil.roundTowardZero(vel.dot(s.getShipToWorld()
-                        .transformDirection(this.getActionVec3d(axis, 1))) * 9.3f);
+                        .transformDirection(this.getActionVec3d(axis, 1))) * 9.3f * 1 / wheelRadius);
             }
         }
         return this.getSpeed();

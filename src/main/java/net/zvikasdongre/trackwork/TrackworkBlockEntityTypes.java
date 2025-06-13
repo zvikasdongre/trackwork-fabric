@@ -8,7 +8,6 @@ import net.zvikasdongre.trackwork.blocks.sproket.SprocketBlockEntity;
 import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
 import net.zvikasdongre.trackwork.rendering.SimpleWheelRenderer;
-import net.zvikasdongre.trackwork.rendering.SprocketInstance;
 import net.zvikasdongre.trackwork.rendering.SprocketRenderer;
 import net.zvikasdongre.trackwork.rendering.SuspensionRenderer;
 
@@ -64,10 +63,18 @@ public class TrackworkBlockEntityTypes {
 
     public static final BlockEntityEntry<WheelBlockEntity> SIMPLE_WHEEL = REGISTRATE
             .blockEntity("simple_wheel", WheelBlockEntity::new)
-//            .instance(() -> PhysEntityTrackInstance::new, false)
             .validBlocks(TrackworkBlocks.SIMPLE_WHEEL)
             .renderer(() -> SimpleWheelRenderer::new)
             .register();
 
-    public static void initialize() {};
+    public static final BlockEntityEntry<WheelBlockEntity> MED_SIMPLE_WHEEL = REGISTRATE
+            .blockEntity("med_simple_wheel", WheelBlockEntity::med)
+            .validBlocks(TrackworkBlocks.MED_SIMPLE_WHEEL)
+            .renderer(() -> SimpleWheelRenderer::new)
+            .register();
+
+    public static void initialize() {
+    }
+
+    ;
 }

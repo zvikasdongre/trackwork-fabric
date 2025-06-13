@@ -21,6 +21,8 @@ public class TrackworkItemGroups {
                 entries.add(TrackworkBlocks.LARGE_SPROCKET_TRACK.asItem());
                 entries.add(TrackworkBlocks.SIMPLE_WHEEL.asItem());
                 entries.add(TrackworkBlocks.SIMPLE_WHEEL_PART.asItem());
+                entries.add(TrackworkBlocks.MED_SIMPLE_WHEEL.asItem());
+                entries.add(TrackworkBlocks.MED_SIMPLE_WHEEL_PART.asItem());
                 entries.add(TrackworkBlocks.TRACK_LEVEL_CONTROLLER.asItem());
                 entries.add(TrackworkItems.TRACK_TOOL_KIT.asItem());
 //                entries.add(TrackworkItems.CONTROL_RESET_STICK.asItem());
