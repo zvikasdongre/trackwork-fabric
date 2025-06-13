@@ -2,9 +2,6 @@ package net.zvikasdongre.trackwork.blocks;
 
 import com.mojang.datafixers.util.Pair;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-
-import javax.annotation.Nullable;
-
 import com.simibubi.create.foundation.utility.Iterate;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -21,25 +18,56 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
+import net.zvikasdongre.trackwork.blocks.TrackBaseBlock.TrackPart;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
 import net.zvikasdongre.trackwork.rendering.TrackBeltRenderer;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 
+import javax.annotation.Nullable;
 
 import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock.AXIS;
 import static net.zvikasdongre.trackwork.blocks.TrackBaseBlock.PART;
-import net.zvikasdongre.trackwork.blocks.TrackBaseBlock.TrackPart;
 
 public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements ITrackPointProvider {
-    private boolean detracked = false;
     protected Pair<Float, Float> nextPointVerticalOffset = new Pair(0.0F, 0.0F);
     protected float nextPointHorizontalOffset = 0.0F;
+    private boolean detracked = false;
     @NotNull
     private ITrackPointProvider.PointType nextPoint = ITrackPointProvider.PointType.NONE;
 
     public TrackBaseBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
+        setLazyTickRate(10);
+    }
+
+    private static Axis around(Axis axis) {
+        if (axis.isVertical()) return axis;
+        return (axis == Direction.Axis.X) ? Direction.Axis.Z : Direction.Axis.X;
+    }
+
+    protected static Vec3i getActionNormal(Axis axis) {
+        return switch (axis) {
+            case X -> new Vec3i(0, -1, 0);
+            case Y -> new Vec3i(0, 0, 0);
+            case Z -> new Vec3i(0, -1, 0);
+        };
+    }
+
+    protected static Vector3d getAxisAsVec(Axis axis) {
+        return switch (axis) {
+            case X -> new Vector3d(1, 0, 0);
+            case Y -> new Vector3d(0, 1, 0);
+            case Z -> new Vector3d(0, 0, 1);
+        };
+    }
+
+    public static Vector3d getActionVec3d(Axis axis, float length) {
+        return switch (axis) {
+            case X -> new Vector3d(0, 0, length);
+            case Y -> new Vector3d(0, 0, 0);
+            case Z -> new Vector3d(length, 0, 0);
+        };
     }
 
     @Override
@@ -96,35 +124,6 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
             return null;
         pos = pos.offset(next, offset);
         return pos;
-    }
-
-    private static Axis around(Axis axis) {
-        if (axis.isVertical()) return axis;
-        return (axis == Direction.Axis.X) ? Direction.Axis.Z : Direction.Axis.X;
-    }
-
-    protected static Vec3i getActionNormal(Axis axis) {
-        return switch (axis) {
-            case X -> new Vec3i(0, -1, 0);
-            case Y -> new Vec3i(0,0, 0);
-            case Z -> new Vec3i(0, -1, 0);
-        };
-    }
-
-    protected static Vector3d getAxisAsVec(Axis axis) {
-        return switch (axis) {
-            case X -> new Vector3d(1, 0, 0);
-            case Y -> new Vector3d(0,1, 0);
-            case Z -> new Vector3d(0, 0, 1);
-        };
-    }
-
-    public static Vector3d getActionVec3d(Axis axis, float length) {
-        return switch (axis) {
-            case X -> new Vector3d(0, 0, length);
-            case Y -> new Vector3d(0,0, 0);
-            case Z -> new Vector3d(length, 0, 0);
-        };
     }
 
     public boolean isDetracked() {

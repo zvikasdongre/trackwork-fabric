@@ -2,7 +2,6 @@ package net.zvikasdongre.trackwork.blocks.wheel;
 
 import com.simibubi.create.content.kinetics.base.KineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -11,15 +10,11 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.BlockStateParticleEffect;
-import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -29,7 +24,6 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.*;
 import net.minecraft.world.RaycastContext;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
-import net.zvikasdongre.trackwork.TrackworkDamageTypes;
 import net.zvikasdongre.trackwork.TrackworkSounds;
 import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
@@ -58,29 +52,36 @@ import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 public class WheelBlockEntity extends KineticBlockEntity {
+    protected final Random random = new Random();
+    @NotNull
+    protected final Supplier<Ship> ship;
+    public boolean isFreespin = true;
+    public boolean assembled;
+    public boolean assembleNextTick = true;
     private float wheelRadius;
     private float suspensionTravel = 1.5f;
     private double suspensionScale = 1.0f;
     private float steeringValue = 0.0f;
     private float linkedSteeringValue = 0.0f;
-    protected final Random random = new Random();
     private float wheelTravel;
     private float prevWheelTravel;
     private float prevFreeWheelAngle;
     private float horizontalOffset;
-    @NotNull
-    protected final Supplier<Ship> ship;
-
-    public boolean isFreespin = true;
-    public boolean assembled;
-    public boolean assembleNextTick = true;
 
     public WheelBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
         this.wheelRadius = 1.0f;
         this.suspensionTravel = 1.5f;
         this.ship = () -> VSGameUtilsKt.getShipObjectManagingPos(this.world, pos);
-        setLazyTickRate(40);
+        this.setLazyTickRate(10);
+    }
+
+    protected static Vec3d getActionNormal(Direction.Axis axis) {
+        return switch (axis) {
+            case X -> new Vec3d(0, -1, 0);
+            case Y -> new Vec3d(0, 0, 0);
+            case Z -> new Vec3d(0, -1, 0);
+        };
     }
 
     @Override
@@ -88,7 +89,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
         super.remove();
 
         if (this.world != null && !this.world.isClient && this.assembled) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null) {
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 controller.removeTrackBlock(this.getPos());
@@ -99,7 +100,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     private void assemble() {
         if (!WheelBlock.isValid(this.getCachedState().get(HORIZONTAL_FACING))) return;
         if (this.world != null && !this.world.isClient) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null && Math.abs(1.0 - ship.getTransform().getShipToWorldScaling().length()) > 0.01) {
                 this.assembled = true;
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
@@ -160,17 +161,17 @@ public class WheelBlockEntity extends KineticBlockEntity {
             double restOffset = this.wheelRadius - 0.5f;
             float trackRPM = this.getSpeed();
             double susScaled = this.suspensionTravel * this.suspensionScale;
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null) {
                 Vec3d worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(this.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3d worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
 
 //                 Steering Control
                 int bestSignal = this.world.getReceivedRedstonePower(this.getPos());
+                float oldSteeringValue = this.steeringValue;
                 this.steeringValue = bestSignal / 15f * ((dir.getDirection() == Direction.AxisDirection.POSITIVE ? 1 : -1));
-
                 this.onLinkedWheel(wbe -> wbe.linkedSteeringValue = this.steeringValue);
-
+                float deltaSteeringValue = oldSteeringValue - this.steeringValue;
                 Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
                 float horizontalOffset = this.getPointHorizontalOffset();
                 Vec3d worldSpaceFutureOffset = toMinecraft(
@@ -193,7 +194,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 }
 
                 double suspensionTravel = clipResult.suspensionLength.lengthSquared() == 0 ? susScaled : clipResult.suspensionLength.length() - 0.5;
-                Vector3dc suspensionForce = toJOML(worldSpaceNormal.multiply( (susScaled - suspensionTravel))).negate();
+                Vector3dc suspensionForce = toJOML(worldSpaceNormal.multiply((susScaled - suspensionTravel))).negate();
 
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 SimpleWheelData.SimpleWheelUpdateData data = new SimpleWheelData.SimpleWheelUpdateData(
@@ -215,14 +216,9 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 this.prevWheelTravel = this.wheelTravel;
                 this.wheelTravel = newWheelTravel;
-                PacketByteBuf buf = PacketByteBufs.create();
-                buf.writeBlockPos(this.getPos());
-                buf.writeFloat(this.wheelTravel);
-                buf.writeFloat(this.getSteeringValue());
-                buf.writeFloat(this.horizontalOffset);
 
-                for (ServerPlayerEntity player : PlayerLookup.tracking((ServerWorld) world, this.getPos())) {
-                    ServerPlayNetworking.send(player, TrackworkPackets.WHEEL_PACKET_ID, buf);
+                if (Math.abs(delta) > 0.01f || Math.abs(deltaSteeringValue) > 0.05f) {
+                    this.sendWheelPacket();
                 }
 
                 // Entity Damage
@@ -241,14 +237,13 @@ public class WheelBlockEntity extends KineticBlockEntity {
 //                    }
                     Vec3d relPos = e.getPos().subtract(worldPos);
                     float speed = Math.abs(this.getSpeed());
-                    if (speed > 1) e.damage(TrackworkDamageSources.runOver(this.world), (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
+                    if (speed > 1)
+                        e.damage(TrackworkDamageSources.runOver(this.world), (speed / 16f) * AllConfigs.server().kinetics.crushingDamage.get());
                 }
 
             }
         }
     }
-
-    public record ClipResult(Vector3dc trackTangent, Vec3d suspensionLength, @Nullable Long groundShipId) { ; }
 
     // TODO: Terrain dynamics
     // Ground pressure?
@@ -291,18 +286,10 @@ public class WheelBlockEntity extends KineticBlockEntity {
         }
     }
 
-    protected static Vec3d getActionNormal(Direction.Axis axis) {
-        return switch (axis) {
-            case X -> new Vec3d(0, -1, 0);
-            case Y -> new Vec3d(0,0, 0);
-            case Z -> new Vec3d(0, -1, 0);
-        };
-    }
-
     protected Vector3d getAxisAsVec(Direction.Axis axis) {
         return switch (axis) {
             case X -> new Vector3d(1, 0, 0);
-            case Y -> new Vector3d(0,1, 0);
+            case Y -> new Vector3d(0, 1, 0);
             case Z -> new Vector3d(0, 0, 1);
         };
     }
@@ -318,13 +305,13 @@ public class WheelBlockEntity extends KineticBlockEntity {
     public Vector3d getForwardVec3d(Direction.Axis axis, float length) {
         return switch (axis) {
             case X -> new Vector3d(0, 0, length);
-            case Y -> new Vector3d(0,0, 0);
+            case Y -> new Vector3d(0, 0, 0);
             case Z -> new Vector3d(length, 0, 0);
         };
     }
 
     public float getFreeWheelAngle(float partialTick) {
-        return (this.prevFreeWheelAngle + this.getWheelSpeed()*partialTick* 3f/10) % 360;
+        return (this.prevFreeWheelAngle + this.getWheelSpeed() * partialTick * 3f / 10) % 360;
     }
 
     // To future dev, this does not take wheel radius into account
@@ -370,12 +357,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
         return MathHelper.lerp(partialTicks, prevWheelTravel, wheelTravel);
     }
 
-    public void setSteeringValue(float value) {
-        this.steeringValue = value;
-    }
-
     public float getSteeringValue() {
         return Math.abs(linkedSteeringValue) > Math.abs(steeringValue) ? linkedSteeringValue : steeringValue;
+    }
+
+    public void setSteeringValue(float value) {
+        this.steeringValue = value;
     }
 
     public void setHorizontalOffset(Vector3dc offset) {
@@ -414,5 +401,27 @@ public class WheelBlockEntity extends KineticBlockEntity {
         this.wheelTravel = wheelTravel;
         this.steeringValue = steeringValue;
         this.horizontalOffset = horizontalOffset;
+    }
+
+    private void sendWheelPacket() {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.getPos());
+        buf.writeFloat(this.wheelTravel);
+        buf.writeFloat(this.getSteeringValue());
+        buf.writeFloat(this.horizontalOffset);
+
+        for (ServerPlayerEntity player : PlayerLookup.tracking((ServerWorld) world, this.getPos())) {
+            ServerPlayNetworking.send(player, TrackworkPackets.WHEEL_PACKET_ID, buf);
+        }
+    }
+
+    @Override
+    public void lazyTick() {
+        super.lazyTick();
+        if (this.assembled && !this.world.isClient && this.ship.get() != null) this.sendWheelPacket();
+    }
+
+    public record ClipResult(Vector3dc trackTangent, Vec3d suspensionLength, @Nullable Long groundShipId) {
+        ;
     }
 }

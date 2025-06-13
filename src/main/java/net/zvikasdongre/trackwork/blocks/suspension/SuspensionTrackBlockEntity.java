@@ -2,19 +2,28 @@ package net.zvikasdongre.trackwork.blocks.suspension;
 
 
 import com.simibubi.create.infrastructure.config.AllConfigs;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockRenderType;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.FluidTags;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.*;
-import net.zvikasdongre.trackwork.Trackwork;
+import net.minecraft.util.math.Direction.Axis;
+import net.minecraft.world.RaycastContext;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
-import net.zvikasdongre.trackwork.TrackworkDamageTypes;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
-
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
 import net.zvikasdongre.trackwork.data.PhysTrackData;
@@ -25,32 +34,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
-
-import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
-import java.util.Random;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.registry.tag.FluidTags;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Direction.Axis;
-import net.minecraft.world.RaycastContext;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Math;
-import org.joml.Vector3d;
-import org.joml.Vector3dc;
-import org.joml.Vector3ic;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
@@ -66,14 +49,14 @@ import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements ITrackPointProvider {
-    private float wheelRadius;
-    private float suspensionTravel = 1.5f;
     protected final Random random = new Random();
     @NotNull
     protected final Supplier<Ship> ship;
-    private Integer trackID;
     public boolean assembled;
     public boolean assembleNextTick = true;
+    private float wheelRadius;
+    private float suspensionTravel = 1.5f;
+    private Integer trackID;
     private float wheelTravel;
     private float prevWheelTravel;
     private double suspensionScale = 1.0;
@@ -85,7 +68,6 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         this.wheelRadius = 0.5f;
         this.suspensionTravel = 1.5f;
         this.ship = () -> VSGameUtilsKt.getShipObjectManagingPos(this.world, pos);
-        setLazyTickRate(40);
     }
 
     public static SuspensionTrackBlockEntity large(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -102,6 +84,32 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         return be;
     }
 
+    public static void push(Entity entity, Vec3d worldPos) {
+        if (!entity.noClip) {
+            double d0 = entity.getX() - worldPos.x;
+            double d1 = entity.getZ() - worldPos.z;
+            double d2 = MathHelper.absMax(d0, d1);
+            if (d2 >= (double) 0.01F) {
+                d2 = java.lang.Math.sqrt(d2);
+                d0 /= d2;
+                d1 /= d2;
+                double d3 = 1.0D / d2;
+                if (d3 > 1.0D) {
+                    d3 = 1.0D;
+                }
+
+                d0 *= d3;
+                d1 *= d3;
+                d0 *= (double) 0.2F;
+                d1 *= (double) 0.2F;
+
+                if (!entity.hasPassengers()) {
+                    entity.addVelocity(d0, 0.0D, d1);
+                }
+            }
+        }
+    }
+
     public void onLoad() {
         super.onLoad();
 
@@ -112,7 +120,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         super.remove();
 
         if (this.world != null && !this.world.isClient && this.assembled) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null) {
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
                 controller.removeTrackBlock(this.trackID);
@@ -123,7 +131,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     private void assemble() {
         if (!TrackBaseBlock.isValidAxis(this.getCachedState().get(AXIS))) return;
         if (this.world != null && !this.world.isClient) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null && Math.abs(1.0 - ship.getTransform().getShipToWorldScaling().length()) > 0.01) {
                 this.assembled = true;
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
@@ -177,7 +185,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             double restOffset = this.wheelRadius - 0.5f;
             float trackRPM = this.getSpeed();
             double susScaled = this.suspensionTravel * this.suspensionScale;
-            ServerShip ship = (ServerShip)this.ship.get();
+            ServerShip ship = (ServerShip) this.ship.get();
             if (ship != null) {
                 Vec3d worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(VectorConversionsMCKt.toJOMLD(getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3d worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
@@ -201,10 +209,12 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 }
 
                 double suspensionTravel = clipResult.suspensionLength.lengthSquared() == 0 ? susScaled : clipResult.suspensionLength.length() - 0.5;
-                Vector3dc suspensionForce = toJOML(worldSpaceNormal.multiply( (susScaled - suspensionTravel))).negate();
+                Vector3dc suspensionForce = toJOML(worldSpaceNormal.multiply((susScaled - suspensionTravel))).negate();
 
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
-                if (this.trackID == null) {return;}
+                if (this.trackID == null) {
+                    return;
+                }
                 PhysTrackData.PhysTrackUpdateData data = new PhysTrackData.PhysTrackUpdateData(
                         toJOML(worldSpaceStart),
                         forceVec,
@@ -215,15 +225,12 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                         trackRPM
                 );
                 this.suspensionScale = controller.updateTrackBlock(this.trackID, data);
+                float wheelTravelDelta = (float) Math.abs(this.wheelTravel - (suspensionTravel + restOffset));
                 this.prevWheelTravel = this.wheelTravel;
                 this.wheelTravel = (float) (suspensionTravel + restOffset);
 
-                PacketByteBuf buf = PacketByteBufs.create();
-                buf.writeBlockPos(this.getPos());
-                buf.writeFloat(this.wheelTravel);
-
-                for (ServerPlayerEntity player : PlayerLookup.tracking((ServerWorld) world, this.getPos())) {
-                    ServerPlayNetworking.send(player, TrackworkPackets.SUSPENSION_PACKET_ID, buf);
+                if (wheelTravelDelta > 0.01f) {
+                    this.sendSuspensionPacket();
                 }
 
                 // Entity Damage
@@ -242,7 +249,8 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 //                    }
                     Vec3d relPos = e.getPos().subtract(worldPos);
                     float speed = Math.abs(this.getSpeed());
-                    if (speed > 1) e.damage(TrackworkDamageSources.runOver(this.world), (speed / 8f) * AllConfigs.server().kinetics.crushingDamage.get());
+                    if (speed > 1)
+                        e.damage(TrackworkDamageSources.runOver(this.world), (speed / 8f) * AllConfigs.server().kinetics.crushingDamage.get());
                 }
             }
         }
@@ -257,7 +265,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         Ship hitShip = VSGameUtilsKt.getShipObjectManagingPos(this.world, bResult.getBlockPos());
         Long hitShipId = null;
         if (hitShip != null) {
-             if (hitShip.equals(ship)) return new ClipResult(new Vector3d(0), Vec3d.ZERO, null);
+            if (hitShip.equals(ship)) return new ClipResult(new Vector3d(0), Vec3d.ZERO, null);
             hitShipId = hitShip.getId();
         }
 
@@ -300,7 +308,8 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 this.nextPointHorizontalOffset - this.horizontalOffset
         );
     }
-    @NotNull 
+
+    @NotNull
     @Override
     public ITrackPointProvider.PointType getTrackPointType() {
 //        if (this.getCachedState().hasProperty(WHEEL_VARIANT) &&
@@ -316,32 +325,6 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public float getSpeed() {
         if (!assembled) return 0;
         return Math.clamp(-TrackworkConfigs.maxRPM.get(), TrackworkConfigs.maxRPM.get(), super.getSpeed());
-    }
-
-    public static void push(Entity entity, Vec3d worldPos) {
-        if (!entity.noClip) {
-            double d0 = entity.getX() - worldPos.x;
-            double d1 = entity.getZ() - worldPos.z;
-            double d2 = MathHelper.absMax(d0, d1);
-            if (d2 >= (double)0.01F) {
-                d2 = java.lang.Math.sqrt(d2);
-                d0 /= d2;
-                d1 /= d2;
-                double d3 = 1.0D / d2;
-                if (d3 > 1.0D) {
-                    d3 = 1.0D;
-                }
-
-                d0 *= d3;
-                d1 *= d3;
-                d0 *= (double)0.2F;
-                d1 *= (double)0.2F;
-
-                if (!entity.hasPassengers()) {
-                    entity.addVelocity(d0, 0.0D, d1);
-                }
-            }
-        }
     }
 
     @Override
@@ -370,6 +353,22 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void setWheelTravel(float wheelTravel) {
         this.prevWheelTravel = this.wheelTravel;
         this.wheelTravel = wheelTravel;
+    }
+
+    @Override
+    public void lazyTick() {
+        super.lazyTick();
+        if (this.assembled && !this.world.isClient && this.ship.get() != null) this.sendSuspensionPacket();
+    }
+
+    private void sendSuspensionPacket() {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.getPos());
+        buf.writeFloat(this.wheelTravel);
+
+        for (ServerPlayerEntity player : PlayerLookup.tracking((ServerWorld) world, this.getPos())) {
+            ServerPlayNetworking.send(player, TrackworkPackets.SUSPENSION_PACKET_ID, buf);
+        }
     }
 
     public static record ClipResult(Vector3dc trackTangent, Vec3d suspensionLength, @Nullable Long groundShipId) {
