@@ -362,6 +362,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     }
 
     private void sendSuspensionPacket() {
+        if (this.world.isClient) return;
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeBlockPos(this.getPos());
         buf.writeFloat(this.wheelTravel);

@@ -325,7 +325,7 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
     }
 
     public float calculateStressApplied(float mass) {
-        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius);
+        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius) * 8;
         if (impact < 0.0F) {
             impact = 0.0F;
         }

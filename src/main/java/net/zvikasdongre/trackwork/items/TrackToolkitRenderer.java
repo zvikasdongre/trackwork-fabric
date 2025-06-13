@@ -11,7 +11,6 @@ import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationAxis;
 import net.zvikasdongre.trackwork.Trackwork;
 
@@ -27,12 +26,13 @@ public class TrackToolkitRenderer extends CustomRenderedItemModelRenderer {
             renderer.render(model.getOriginalModel(), light);
 
         } else if (nbt.contains("Tool")) {
+            ms.translate(1 / 16f, 1 / 16f, -1 / 16f);
             TrackToolkit.TOOL type = TrackToolkit.TOOL.from(nbt.getInt("Tool"));
 
             BakedModel toolModel;
             switch (type) {
                 case OFFSET -> {
-                    float yOffset = 0.5f/16;
+                    float yOffset = 0.5f / 16;
                     ms.push();
                     ms.translate(0, -yOffset, 0);
                     ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(AnimationTickHolder.getRenderTime() * 15f));
