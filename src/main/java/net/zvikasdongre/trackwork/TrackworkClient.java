@@ -1,17 +1,16 @@
 package net.zvikasdongre.trackwork;
 
 import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
-import io.netty.channel.ChannelHandler;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.config.ModConfig;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
 import net.zvikasdongre.trackwork.blocks.suspension.SuspensionTrackBlockEntity;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
+import net.zvikasdongre.trackwork.client.TrackworkClientEvents;
+import net.zvikasdongre.trackwork.client.TrackworkPartialModels;
+import net.zvikasdongre.trackwork.client.TrackworkSpriteShifts;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
 
 public class TrackworkClient implements ClientModInitializer {
@@ -20,6 +19,7 @@ public class TrackworkClient implements ClientModInitializer {
         TrackworkPartialModels.init();
         TrackworkSpriteShifts.init();
         TrackworkPonders.init();
+        TrackworkClientEvents.init();
         ForgeConfigRegistry.INSTANCE.register(Trackwork.MOD_ID, ModConfig.Type.CLIENT, TrackworkConfigs.CLIENT_SPEC);
 
 

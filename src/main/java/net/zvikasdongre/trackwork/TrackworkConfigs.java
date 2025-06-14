@@ -3,6 +3,7 @@ package net.zvikasdongre.trackwork;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 public class TrackworkConfigs {
+    // Server Configs
     private static final ForgeConfigSpec.Builder SERVER_BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec.BooleanValue enableStress = SERVER_BUILDER
             .comment("Enable track Kinetic Stress")
@@ -19,13 +20,16 @@ public class TrackworkConfigs {
     public static final ForgeConfigSpec.IntValue wheelPairDist = SERVER_BUILDER
             .comment("The max distance between wheels where steering, etc. will be paired")
             .defineInRange("wheelPairDistance", 7, 5, 15);
-    
     static final ForgeConfigSpec SERVER_SPEC = SERVER_BUILDER.build();
+
+    // Client Configs
     private static final ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec.IntValue trackRenderDist = CLIENT_BUILDER
             .comment("Track render distance")
             .defineInRange("trackRenderDist", 256, 64, 1024);
+    public static final ForgeConfigSpec.IntValue trackSoundDist = CLIENT_BUILDER
+            .comment("Track sound distance")
+            .defineInRange("trackSoundDist", 16, 1, 16);
     static final ForgeConfigSpec CLIENT_SPEC = CLIENT_BUILDER.build();
-
 }
 

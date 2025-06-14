@@ -17,19 +17,24 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.RaycastContext;
+import net.zvikasdongre.trackwork.TrackAmbientGroups;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
+import net.zvikasdongre.trackwork.TrackworkSounds;
 import net.zvikasdongre.trackwork.TrackworkUtil;
 import net.zvikasdongre.trackwork.blocks.ITrackPointProvider;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlock;
 import net.zvikasdongre.trackwork.blocks.TrackBaseBlockEntity;
 import net.zvikasdongre.trackwork.data.PhysTrackData;
 import net.zvikasdongre.trackwork.forces.PhysicsTrackController;
+import net.zvikasdongre.trackwork.forces.SimpleWheelController;
 import net.zvikasdongre.trackwork.networking.TrackworkPackets;
+import net.zvikasdongre.trackwork.sounds.TrackSoundScapes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -38,6 +43,7 @@ import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.physics_api.PoseVel;
 
 import java.util.List;
 import java.util.Random;
@@ -158,21 +164,48 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         }
 
         // Ground particles
-        if (this.world.isClient && this.ship.get() != null && Math.abs(this.getSpeed()) > 64) {
+        if (this.world.isClient && this.ship.get() != null) {
             Vector3d pos = toJOML(Vec3d.ofBottomCenter(this.getPos()));
             Vector3d ground = VSGameUtilsKt.getWorldCoordinates(this.world, this.getPos(), pos.sub(UP.mul(this.wheelTravel * 1.2, new Vector3d())));
             BlockPos blockpos = BlockPos.ofFloored(toMinecraft(ground));
             BlockState blockstate = this.world.getBlockState(blockpos);
-            // Is this safe without calling BlockState::addRunningEffects?
-            if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
-                Vector3dc speed = this.ship.get().getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getCachedState().get(AXIS), this.getSpeed()));
-                world.addParticle(new BlockStateParticleEffect(
-                                ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
-                        pos.x + (this.random.nextDouble() - 0.5D),
-                        pos.y + 0.25D,
-                        pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
-                        speed.x() * -1.0D, 10.5D, speed.z() * -1.0D
-                );
+
+            if (blockstate.isSolid()) {
+                Ship s = this.ship.get();
+                Vector3dc reversedVel = s.getShipTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(this.getCachedState().get(AXIS), this.getSpeed()));
+                if (Math.abs(this.getSpeed()) > 64) {
+                    // Is this safe without calling BlockState::addRunningEffects?
+                    if (blockstate.getRenderType() != BlockRenderType.INVISIBLE) {
+
+                        this.world.addParticle(new BlockStateParticleEffect(
+                                        ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
+                                pos.x + (this.random.nextDouble() - 0.5D),
+                                pos.y + 0.25D,
+                                pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
+                                reversedVel.x() * -1.0D, 10.5D, reversedVel.z() * -1.0D
+                        );
+                    }
+                }
+
+                // TODO: Slip sounds
+                if (world.isClient) {
+                    float spd = Math.abs(getSpeed());
+                    float pitch = MathHelper.clamp((spd / 256f) + .45f, .85f, 1f);
+                    if (spd < 8)
+                        return;
+                    TrackSoundScapes.play(TrackAmbientGroups.TRACK_GROUND_AMBIENT, this.getPos(), pitch * 0.5f);
+
+                    Vector3dc shipSpeed = SimpleWheelController.accumulatedVelocity(s.getTransform(),
+                            new PoseVel(
+                                    s.getTransform().getPositionInWorld(),
+                                    s.getTransform().getShipToWorldRotation(),
+                                    s.getVelocity(),
+                                    s.getOmega()
+                            ), ground);
+                    float slip = (float) reversedVel.add(shipSpeed, new Vector3d()).length();
+                    pitch = MathHelper.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
+                    TrackSoundScapes.play(TrackAmbientGroups.TRACK_GROUND_SLIP, this.getPos(), pitch);
+                }
             }
         }
 
@@ -225,32 +258,33 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                         trackRPM
                 );
                 this.suspensionScale = controller.updateTrackBlock(this.trackID, data);
-                float wheelTravelDelta = (float) Math.abs(this.wheelTravel - (suspensionTravel + restOffset));
                 this.prevWheelTravel = this.wheelTravel;
-                this.wheelTravel = (float) (suspensionTravel + restOffset);
-
+                float newWheelTravel = (float) (suspensionTravel + restOffset);
+                float wheelTravelDelta = newWheelTravel - this.wheelTravel;
                 if (wheelTravelDelta > 0.01f) {
                     this.sendSuspensionPacket();
                 }
+                this.wheelTravel = newWheelTravel;
 
                 // Entity Damage
                 // TODO: Players don't get pushed, why?
-                List<LivingEntity> hits = this.world.getEntitiesByClass(LivingEntity.class, new Box(this.getPos()).expand(0, -1, 0).contract(0.5), LivingEntity::isAlive);
+                List<LivingEntity> hits = this.world.getEntitiesByClass(LivingEntity.class, new Box(this.getPos()).contract(0.5).expand(0, -1.5, 0), LivingEntity::isAlive);
                 Vec3d worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3d.ofCenter(this.getPos()))));
                 for (LivingEntity e : hits) {
-//                    if (e instanceof ItemEntity)
-//                        continue;
-//                    if (e instanceof AbstractContraptionEntity)
-//                        continue;
                     this.push(e, worldPos);
-//                    What is this?
-//                    if (e instanceof ServerPlayer p) {
-//                        ((MSGPLIDuck) p.connection).tallyho$setAboveGroundTickCount(0);
-//                    }
                     Vec3d relPos = e.getPos().subtract(worldPos);
                     float speed = Math.abs(this.getSpeed());
                     if (speed > 1)
                         e.damage(TrackworkDamageSources.runOver(this.world), (speed / 8f) * AllConfigs.server().kinetics.crushingDamage.get());
+                }
+
+                BlockState state = this.getCachedState();
+                if (wheelTravelDelta < -0.3 && state.contains(SuspensionTrackBlock.WHEEL_VARIANT)
+                        && state.get(SuspensionTrackBlock.WHEEL_VARIANT) != SuspensionTrackBlock.TrackVariant.BLANK) {
+                    this.world.playSound(null, this.getPos(), TrackworkSounds.SUSPENSION_CREAK, SoundCategory.BLOCKS,
+                            Math.clamp(0.0f, 2.0f, Math.abs(wheelTravelDelta * 3 * (this.getSpeed() / 256)) * 0.5f),
+                            Math.lerp(1, 0.3f, -wheelTravelDelta) + 0.4F * this.random.nextFloat()
+                    );
                 }
             }
         }
@@ -353,6 +387,11 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void setWheelTravel(float wheelTravel) {
         this.prevWheelTravel = this.wheelTravel;
         this.wheelTravel = wheelTravel;
+    }
+
+    @Override
+    protected boolean isNoisy() {
+        return false;
     }
 
     @Override

@@ -13,9 +13,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
-import net.zvikasdongre.trackwork.TrackworkPartialModels;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlock;
 import net.zvikasdongre.trackwork.blocks.wheel.WheelBlockEntity;
+import net.zvikasdongre.trackwork.client.TrackworkPartialModels;
 
 import java.util.function.BiConsumer;
 
@@ -33,7 +33,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
                 .rotateY(-yRot)
                 .translate(offset.x, -8 / 16f - offset.y, 1.5 + offset.z)
                 .rotateX(-Math.toDegrees(Math.atan((wheelTravel + 0.3f) / 1.1)))
-                .rotateZ(flip ? 180 : 0)
                 .translate(0, 8 / 16f + offset.y, -1.375)
                 .unCentre();
         rib.light(light).renderInto(ms, buffer.getBuffer(RenderLayer.getSolid()));

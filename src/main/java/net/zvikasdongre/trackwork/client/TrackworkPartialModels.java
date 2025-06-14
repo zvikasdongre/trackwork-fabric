@@ -1,6 +1,7 @@
-package net.zvikasdongre.trackwork;
+package net.zvikasdongre.trackwork.client;
 
 import com.jozufozu.flywheel.core.PartialModel;
+import net.zvikasdongre.trackwork.Trackwork;
 
 public class TrackworkPartialModels {
     //    public static final PartialModel SUSPENSION_WHEEL = block("wheels");

@@ -2,6 +2,8 @@ package net.zvikasdongre.trackwork.blocks.sproket;
 
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.foundation.utility.Lang;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
@@ -13,6 +15,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.zvikasdongre.trackwork.TrackAmbientGroups;
 import net.zvikasdongre.trackwork.TrackworkConfigs;
 import net.zvikasdongre.trackwork.TrackworkEntities;
 import net.zvikasdongre.trackwork.TrackworkUtil;
@@ -23,6 +26,7 @@ import net.zvikasdongre.trackwork.data.PhysEntityTrackData;
 import net.zvikasdongre.trackwork.entities.TrackBeltEntity;
 import net.zvikasdongre.trackwork.entities.WheelEntity;
 import net.zvikasdongre.trackwork.forces.PhysicsEntityTrackController;
+import net.zvikasdongre.trackwork.sounds.TrackSoundScapes;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Quaterniond;
@@ -207,6 +211,15 @@ public class SprocketBlockEntity extends TrackBaseBlockEntity implements ITrackP
                 this.getSpeed()
         );
         return trackData;
+    }
+
+    @Environment(EnvType.CLIENT)
+    public void tickAudio() {
+        float spd = Math.abs(getSpeed());
+        float pitch = MathHelper.clamp((spd / 256f) + .45f, .85f, 1f);
+        if (spd < 8)
+            return;
+        TrackSoundScapes.play(TrackAmbientGroups.TRACK_SPROCKET_AMBIENT, pos, pitch);
     }
 
     @Override
