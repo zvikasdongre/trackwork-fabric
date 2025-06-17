@@ -11,6 +11,12 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -52,9 +58,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
 
 public class WheelBlockEntity extends KineticBlockEntity {
     private float wheelRadius;
@@ -140,7 +143,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                     // Is this safe without calling BlockState::addRunningEffects?
                     if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
                         this.level.addParticle(new BlockParticleOption(
-                                        ParticleTypes.BLOCK, blockstate).setPos(blockpos),
+                                        ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
                                 pos.x + (this.random.nextDouble() - 0.5D),
                                 pos.y + 0.25D,
                                 pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
@@ -150,7 +153,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 }
 
                 // TODO: Slip sounds
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                if (this.level.isClientSide) {
                     float wheelSpeed = getWheelSpeed();
                     float pitch = Mth.clamp((Math.abs(wheelSpeed) / 256f) + .45f, .85f, 3f);
                     if (Math.abs(wheelSpeed) < 8)
@@ -167,7 +170,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                     float slip = (float) reversedWheelVel.negate(new Vector3d()).sub(shipSpeed).length();
                     pitch = Mth.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
                     TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_SLIP, worldPosition, pitch);
-                });
+                }
             }
         }
 
@@ -261,14 +264,14 @@ public class WheelBlockEntity extends KineticBlockEntity {
                 }
 
                 if (delta < -0.3) {
-                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS,
+                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK, SoundSource.BLOCKS,
                             Math.clamp(0.0f, 2.0f, Math.abs(delta * 3 * (this.getSpeed() / 256))*0.5f),
                             Math.lerp(1.2f, 0.8f, -delta) + 0.4F * this.random.nextFloat()
                     );
                 }
                 if (isOnGround && this.random.nextFloat() < Math.abs(this.getSpeed() / 256)*0.1) {
                     this.level.playSound(null, this.getBlockPos(),
-                            TrackSounds.WHEEL_ROCKTOSS.get(), SoundSource.BLOCKS,
+                            TrackSounds.WHEEL_ROCKTOSS, SoundSource.BLOCKS,
                             Math.max(0.2f, Math.abs(this.getSpeed() / 256)*0.5f),
                             0.8F + 0.4F * this.random.nextFloat());
                 }
@@ -315,7 +318,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
     protected void onLinkedWheel(Consumer<WheelBlockEntity> action) {
         Direction dir = this.getBlockState().getValue(HORIZONTAL_FACING);
-        for (int i = 1; i <= TrackworkConfigs.server().wheelPairDist.get() + 1; i++) {
+        for (int i = 1; i <= TrackworkConfigs.wheelPairDist.get() + 1; i++) {
             BlockPos bpos = this.getBlockPos().relative(dir, i);
             BlockEntity be = this.level.getBlockEntity(bpos);
             if (be instanceof WheelBlockEntity wbe) {
@@ -333,8 +336,17 @@ public class WheelBlockEntity extends KineticBlockEntity {
     }
 
     protected void syncToClient() {
-        if (!this.level.isClientSide) TrackPackets.getChannel().send(packetTarget(),
-                new SimpleWheelPacket(this.getBlockPos(), this.wheelTravel, this.getSteeringValue(), this.horizontalOffset));
+        if (this.level.isClientSide) return;
+
+        FriendlyByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.getBlockPos());
+        buf.writeFloat(this.wheelTravel);
+        buf.writeFloat(this.getSteeringValue());
+        buf.writeFloat(this.horizontalOffset);
+
+        for (ServerPlayer player : PlayerLookup.tracking((ServerLevel) level, this.getBlockPos())) {
+            ServerPlayNetworking.send(player, TrackPackets.WHEEL_PACKET_ID, buf);
+        }
     }
 
     /*
@@ -447,7 +459,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
     @Override
     public float calculateStressApplied() {
-        if (this.level.isClientSide || !TrackworkConfigs.server().enableStress.get() || !this.assembled)
+        if (this.level.isClientSide || !TrackworkConfigs.enableStress.get() || !this.assembled)
             return super.calculateStressApplied();
 
         Ship ship = this.ship.get();
@@ -459,7 +471,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     }
 
     public float calculateStressApplied(float mass) {
-        double impact = (mass / 1000) * TrackworkConfigs.server().stressMult.get() * (2.0f * this.wheelRadius);
+        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius);
         if (impact < 0) {
             impact = 0;
         }
@@ -470,10 +482,10 @@ public class WheelBlockEntity extends KineticBlockEntity {
         return false;
     }
 
-    public void handlePacket(SimpleWheelPacket p) {
+    public void handlePacket(float wheelTravel, float steeringValue, float horizontalOffset) {
         this.prevWheelTravel = this.wheelTravel;
-        this.wheelTravel = p.wheelTravel;
-        this.steeringValue = p.steeringValue;
-        this.horizontalOffset = p.horizontalOffset;
+        this.wheelTravel = wheelTravel;
+        this.steeringValue = steeringValue;
+        this.horizontalOffset = horizontalOffset;
     }
 }

@@ -89,7 +89,7 @@ public class TrackSoundScapes {
     }
 
     protected static int getMaxAmbientSourceDistance() {
-        return TrackworkConfigs.client().trackSoundDist.get();
+        return TrackworkConfigs.trackSoundDist.get();
     }
 
     protected static BlockPos getCameraPos() {

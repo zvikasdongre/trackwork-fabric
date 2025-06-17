@@ -9,9 +9,15 @@ import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.TrackPart;
 import edn.stratodonut.trackwork.tracks.network.ThrowTrackPacket;
 import edn.stratodonut.trackwork.tracks.render.TrackBeltRenderer;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -75,7 +81,13 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
             }
         }
 
-        TrackPackets.getChannel().send(packetTarget(), new ThrowTrackPacket(this.getBlockPos(), this.detracked));
+        FriendlyByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.getBlockPos());
+        buf.writeBoolean(this.detracked);
+
+        for (ServerPlayer player : PlayerLookup.tracking((ServerLevel) world, this.getBlockPos())) {
+            ServerPlayNetworking.send(player, TrackPackets.THROW_TRACK_PACKET_ID, buf);
+        }
     }
 
     private @Nullable BlockPos nextTrackPosition(BlockState state, BlockPos pos, boolean forward) {
@@ -105,8 +117,8 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
         super.read(compound, clientPacket);
     }
 
-    public void handlePacket(ThrowTrackPacket p) {
-        this.detracked = p.detracked;
+    public void handlePacket(boolean detracked) {
+        this.detracked = detracked;
         if (this.detracked) this.speed = 0.0f;
     }
 }

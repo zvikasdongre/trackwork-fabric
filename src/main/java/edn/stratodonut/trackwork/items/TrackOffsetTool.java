@@ -25,7 +25,7 @@ public class TrackOffsetTool extends Item {
 
     @NotNull
     @Override
-    public InteractionResult onItemUseFirst(ItemStack stack, @NotNull UseOnContext context) {
+    public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null || !player.mayBuild())
             return InteractionResult.PASS;

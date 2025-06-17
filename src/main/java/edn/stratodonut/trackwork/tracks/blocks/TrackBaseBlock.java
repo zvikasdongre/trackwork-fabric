@@ -52,26 +52,24 @@ public abstract class TrackBaseBlock<BE extends TrackBaseBlockEntity> extends Ro
         return !axis.isVertical();
     }
 
-    @Override
+//    @Override
     public boolean shouldCheckWeakPower(BlockState state, SignalGetter level, BlockPos pos, Direction side) {
         return false;
     }
 
-    @Override
-    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-        if (TrackworkConfigs.server().enableTrackThrow.get()) {
-            this.withBlockEntityDo(level, pos, be -> be.throwTrack(false));
-        }
-
-        super.onBlockExploded(state, level, pos, explosion);
-    }
+//    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+//        if (TrackworkConfigs.enableTrackThrow.get()) {
+//            this.withBlockEntityDo(level, pos, be -> be.throwTrack(false));
+//        }
+//
+//        super.onBlockExploded(state, level, pos, explosion);
+//    }
 
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
-    @Override
     public @NotNull PushReaction getPistonPushReaction(@NotNull BlockState state) {
         return PushReaction.BLOCK;
     }

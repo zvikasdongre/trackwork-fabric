@@ -37,6 +37,6 @@ public final class SimpleWheelPacket extends BlockEntityDataPacket<WheelBlockEnt
 
     @Override
     protected void handlePacket(WheelBlockEntity blockEntity) {
-        blockEntity.handlePacket(this);
+        blockEntity.handlePacket(this.wheelTravel, this.steeringValue, this.horizontalOffset);
     }
 }

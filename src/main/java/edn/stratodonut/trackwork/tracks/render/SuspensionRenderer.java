@@ -86,6 +86,6 @@ public class SuspensionRenderer extends KineticBlockEntityRenderer<SuspensionTra
 
     @Override
     public int getViewDistance() {
-        return TrackworkConfigs.client().trackRenderDist.get();
+        return TrackworkConfigs.trackRenderDist.get();
     }
 }

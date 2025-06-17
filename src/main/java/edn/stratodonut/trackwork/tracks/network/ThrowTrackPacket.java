@@ -25,6 +25,6 @@ public class ThrowTrackPacket extends BlockEntityDataPacket<TrackBaseBlockEntity
 
     @Override
     protected void handlePacket(TrackBaseBlockEntity blockEntity) {
-        blockEntity.handlePacket(this);
+        blockEntity.handlePacket(this.detracked);
     }
 }

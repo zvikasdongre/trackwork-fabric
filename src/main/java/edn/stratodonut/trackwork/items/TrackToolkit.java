@@ -2,7 +2,6 @@ package edn.stratodonut.trackwork.items;
 
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.Create;
-import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
 import com.simibubi.create.foundation.utility.Components;
 import com.simibubi.create.foundation.utility.Lang;
 import edn.stratodonut.trackwork.TrackSounds;
@@ -31,9 +30,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
@@ -69,7 +65,7 @@ public class TrackToolkit extends Item {
 
     @NotNull
     @Override
-    public InteractionResult onItemUseFirst(ItemStack stack, @NotNull UseOnContext context) {
+    public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null || !player.mayBuild())
             return InteractionResult.PASS;
@@ -77,7 +73,7 @@ public class TrackToolkit extends Item {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
 
-        CompoundTag nbt = stack.getOrCreateTag();
+        CompoundTag nbt = context.getItemInHand().getOrCreateTag();
         if (nbt.contains("Tool")) {
             TrackToolkit.TOOL type = TrackToolkit.TOOL.from(nbt.getInt("Tool"));
 
@@ -106,7 +102,7 @@ public class TrackToolkit extends Item {
                 case STIFFNESS -> {
                     Block hitBlock = level.getBlockState(pos).getBlock();
 
-                    player.playSound(TrackSounds.SPRING_TOOL.get(), 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());
+                    player.playSound(TrackSounds.SPRING_TOOL, 1.0f, 0.8f + 0.4f * player.getRandom().nextFloat());
 
                     boolean isSneaking = player.isShiftKeyDown();
                     if (hitBlock instanceof TrackBaseBlock<?>) {
@@ -166,11 +162,5 @@ public class TrackToolkit extends Item {
             nbt.putInt("Tool", TOOL.next(nbt.getInt("Tool")));
         }
         stack.setTag(nbt);
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(SimpleCustomRenderer.create(this, new TrackToolkitRenderer()));
     }
 }

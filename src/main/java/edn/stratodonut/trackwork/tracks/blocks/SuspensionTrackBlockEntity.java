@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -52,9 +58,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
 
 public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements ITrackPointProvider {
     private float wheelRadius;
@@ -155,7 +158,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                     if (blockstate.getRenderShape() != RenderShape.INVISIBLE) {
 
                         this.level.addParticle(new BlockParticleOption(
-                                ParticleTypes.BLOCK, blockstate).setPos(blockpos),
+                                ParticleTypes.BLOCK, blockstate).setSourcePos(blockpos),
                                 pos.x + (this.random.nextDouble() - 0.5D),
                                 pos.y + 0.25D,
                                 pos.z + (this.random.nextDouble() - 0.5D) * this.wheelRadius,
@@ -165,7 +168,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 }
 
                 // TODO: Slip sounds
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                if (this.level.isClientSide) {
                     float spd = Math.abs(getSpeed());
                     float pitch = Mth.clamp((spd / 256f) + .45f, .85f, 1f);
                     if (spd < 8)
@@ -182,7 +185,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                     float slip = (float) reversedVel.add(shipSpeed, new Vector3d()).length();
                     pitch = Mth.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
                     TrackSoundScapes.play(TrackAmbientGroups.TRACK_GROUND_SLIP, worldPosition, pitch);
-                });
+                }
             }
         }
 
@@ -236,7 +239,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 this.prevWheelTravel = this.wheelTravel;
                 float newWheelTravel = (float) (suspensionTravel + restOffset);
                 float wheelTravelDelta = newWheelTravel - this.wheelTravel;
-                if (wheelTravelDelta > 0.01f) TrackPackets.getChannel().send(packetTarget(), new SuspensionWheelPacket(this.getBlockPos(), this.wheelTravel));
+                if (wheelTravelDelta > 0.01f) this.sendSuspensionPacket();
                 this.wheelTravel = newWheelTravel;
 
                 // Entity Damage
@@ -253,7 +256,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 BlockState state = this.getBlockState();
                 if (wheelTravelDelta < -0.3 && state.hasProperty(SuspensionTrackBlock.WHEEL_VARIANT)
                         && state.getValue(SuspensionTrackBlock.WHEEL_VARIANT) != SuspensionTrackBlock.TrackVariant.BLANK) {
-                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK.get(), SoundSource.BLOCKS,
+                    this.level.playSound(null, this.getBlockPos(), SUSPENSION_CREAK, SoundSource.BLOCKS,
                             Math.clamp(0.0f, 2.0f, Math.abs(wheelTravelDelta * 3 * (this.getSpeed() / 256))*0.5f),
                             Math.lerp(1, 0.3f, -wheelTravelDelta) + 0.4F * this.random.nextFloat()
                     );
@@ -265,8 +268,20 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     @Override
     public void lazyTick() {
         super.lazyTick();
-        if (this.assembled && !this.level.isClientSide && this.ship.get() != null) TrackPackets.getChannel().send(packetTarget(), new SuspensionWheelPacket(this.getBlockPos(), this.wheelTravel));
+        if (this.assembled && !this.level.isClientSide && this.ship.get() != null) this.sendSuspensionPacket();
     }
+
+    private void sendSuspensionPacket() {
+        if (this.level.isClientSide) return;
+        FriendlyByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.getBlockPos());
+        buf.writeFloat(this.wheelTravel);
+
+        for (ServerPlayer player : PlayerLookup.tracking((ServerLevel) level, this.getBlockPos())) {
+            ServerPlayNetworking.send(player, TrackPackets.SUSPENSION_PACKET_ID, buf);
+        }
+    }
+
 
     public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) { ; }
 
@@ -336,7 +351,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     @Override
     public float getSpeed() {
         if (!assembled) return 0;
-        return Math.clamp(-TrackworkConfigs.server().maxRPM.get(), TrackworkConfigs.server().maxRPM.get(), super.getSpeed());
+        return Math.clamp(-TrackworkConfigs.maxRPM.get(), TrackworkConfigs.maxRPM.get(), super.getSpeed());
     }
 
     public static void push(Entity entity, Vec3 worldPos) {
@@ -397,8 +412,8 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         return false;
     }
 
-    public void handlePacket(SuspensionWheelPacket p) {
+    public void handlePacket(float wheelTravel) {
         this.prevWheelTravel = this.wheelTravel;
-        this.wheelTravel = p.wheelTravel;
+        this.wheelTravel = wheelTravel;
     }
 }

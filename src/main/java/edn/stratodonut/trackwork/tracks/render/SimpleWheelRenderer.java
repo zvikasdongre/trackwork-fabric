@@ -151,6 +151,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
 
     @Override
     public int getViewDistance() {
-        return TrackworkConfigs.client().trackRenderDist.get();
+        return TrackworkConfigs.trackRenderDist.get();
     }
 }

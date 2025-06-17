@@ -11,6 +11,8 @@ import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
 import edn.stratodonut.trackwork.tracks.forces.PhysEntityTrackController;
 import edn.stratodonut.trackwork.tracks.render.TrackBeltRenderer;
 import edn.stratodonut.trackwork.wheel.WheelEntity;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -22,9 +24,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
 
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
@@ -264,7 +263,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     @Override
     public void tickAudio() {
         float spd = Math.abs(getSpeed());
@@ -276,7 +275,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 
 //    @Override
 //    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-//        if (!TrackworkConfigs.server().enableStress.get()) return false;
+//        if (!TrackworkConfigs.enableStress.get()) return false;
 //        Ship ship = this.ship.get();
 //        if (!this.assembled || ship == null) return false;
 //
@@ -335,7 +334,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     @Override
     public float getSpeed() {
         if (!assembled) return 0;
-        return Math.min(super.getSpeed(), TrackworkConfigs.server().maxRPM.get());
+        return Math.min(super.getSpeed(), TrackworkConfigs.maxRPM.get());
     }
 
     @Override
@@ -356,7 +355,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 
     @Override
     public float calculateStressApplied() {
-        if (this.level.isClientSide || !TrackworkConfigs.server().enableStress.get() ||
+        if (this.level.isClientSide || !TrackworkConfigs.enableStress.get() ||
                 !this.assembled || this.getBlockState().getValue(PART) != TrackPart.START) return super.calculateStressApplied();
 
         Ship ship = this.ship.get();
@@ -368,7 +367,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     }
 
     public float calculateStressApplied(float mass) {
-        double impact = (mass / 1000) * TrackworkConfigs.server().stressMult.get() * (2.0f * this.wheelRadius) * 8;
+        double impact = (mass / 1000) * TrackworkConfigs.stressMult.get() * (2.0f * this.wheelRadius) * 8;
         if (impact < 0) {
             impact = 0;
         }

@@ -84,6 +84,6 @@ public class PhysEntityTrackRenderer extends KineticBlockEntityRenderer<PhysEnti
 
     @Override
     public int getViewDistance() {
-        return TrackworkConfigs.client().trackRenderDist.get();
+        return TrackworkConfigs.trackRenderDist.get();
     }
 }

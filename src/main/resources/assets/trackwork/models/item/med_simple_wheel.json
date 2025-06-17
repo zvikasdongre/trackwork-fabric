@@ -1,7 +1,6 @@
 {
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
-	"render_type": "minecraft:cutout",
 	"texture_size": [128, 128],
 	"textures": {
 		"1": "trackwork:block/rib",

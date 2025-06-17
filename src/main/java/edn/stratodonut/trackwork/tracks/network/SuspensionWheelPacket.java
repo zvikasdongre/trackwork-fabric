@@ -28,6 +28,6 @@ public final class SuspensionWheelPacket extends BlockEntityDataPacket<Suspensio
 
     @Override
     protected void handlePacket(SuspensionTrackBlockEntity blockEntity) {
-        blockEntity.handlePacket(this);
+        blockEntity.handlePacket(this.wheelTravel);
     }
 }

@@ -2,20 +2,23 @@ package edn.stratodonut.trackwork;
 
 import com.simibubi.create.AllCreativeModeTabs;
 import com.simibubi.create.foundation.data.AssetLookup;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import edn.stratodonut.trackwork.items.ControllerResetStick;
 import edn.stratodonut.trackwork.items.TrackToolkit;
+import edn.stratodonut.trackwork.items.TrackToolkitRenderer;
 
 import static edn.stratodonut.trackwork.TrackworkMod.REGISTRATE;
 
 public class TrackworkItems {
     static {
-        REGISTRATE.setCreativeTab(AllCreativeModeTabs.BASE_CREATIVE_TAB);
+        REGISTRATE.setCreativeTab(AllCreativeModeTabs.BASE_CREATIVE_TAB.key());
     }
 
     public static final ItemEntry<TrackToolkit> TRACK_TOOL_KIT =
             REGISTRATE.item("track_tool_kit", TrackToolkit::new)
                     .properties(p -> p.stacksTo(1))
+                    .transform(CreateRegistrate.customRenderedItem(() -> TrackToolkitRenderer::new))
                     .model(AssetLookup.itemModelWithPartials())
                     .register();
 

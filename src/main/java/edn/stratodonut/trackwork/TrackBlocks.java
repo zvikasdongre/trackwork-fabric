@@ -35,7 +35,7 @@ import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
 
 public class TrackBlocks {
     static {
-        REGISTRATE.setCreativeTab(AllCreativeModeTabs.BASE_CREATIVE_TAB);
+        REGISTRATE.setCreativeTab(AllCreativeModeTabs.BASE_CREATIVE_TAB.key());
     }
 
     // TODO: More Freeform Rigid tracks (like a massive wall of blocks)
