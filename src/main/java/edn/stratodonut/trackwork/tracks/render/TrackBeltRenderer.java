@@ -35,7 +35,7 @@ public class TrackBeltRenderer {
                                    BlockState state, float yRot, int light, PoseStack ms, MultiBufferSource buf,
                                    ScalableScroll scroll) {
         boolean isLarge = fromTrack.isBeltLarge();
-        float largeScale = isLarge ? 2 : 2*fromTrack.getWheelRadius();
+        float largeScale = isLarge ? 2 : 2 * fromTrack.getWheelRadius();
         SuperByteBuffer topLink;
         TrackBaseBlock.TrackPart part = state.getValue(TrackBaseBlock.PART);
         if (part == TrackBaseBlock.TrackPart.MIDDLE) {
@@ -43,7 +43,7 @@ public class TrackBeltRenderer {
             topLink.centre()
                     .rotateY(yRot)
                     .rotateX(180)
-                    .translate(0, (-0.5)*(17/16f)*largeScale, -0.5)
+                    .translate(0, (-0.5) * (17 / 16f) * largeScale, -0.5)
                     .scale(1, largeScale, 1)
                     .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(1.0f))
                     .unCentre();
@@ -64,8 +64,8 @@ public class TrackBeltRenderer {
             topLink.centre()
                     .rotateY(yRot)
                     .rotateX(180)
-                    .translate(0, (-0.5)*(17/16f)*largeScale, -0.5)
-                    .scale(1, largeScale, 12/16f + (largeScale/16f))
+                    .translate(0, (-0.5) * (17 / 16f) * largeScale, -0.5)
+                    .scale(1, largeScale, 12 / 16f + (largeScale / 16f))
                     .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(flip))
                     .unCentre();
             topLink.light(light).renderInto(ms, buf.getBuffer(RenderType.solid()));
@@ -73,8 +73,8 @@ public class TrackBeltRenderer {
             SuperByteBuffer wrapLink = CachedBufferer.partial(TrackworkPartialModels.TRACK_WRAP, state);
             wrapLink.centre()
                     .rotateY(yRot)
-                    .scale(1, largeScale,largeScale)
-                    .translate(0, (0.5) + 1/16f, fromTrack.getWheelRadius() > 0.667 ? 0.5/16f : -1/16f)
+                    .scale(1, largeScale, largeScale)
+                    .translate(0, (0.5) + 1 / 16f, fromTrack.getWheelRadius() > 0.667 ? 0.5 / 16f : -1 / 16f)
                     .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(flip))
                     .unCentre();
             wrapLink.light(light).renderInto(ms, buf.getBuffer(RenderType.solid()));
@@ -87,8 +87,8 @@ public class TrackBeltRenderer {
             // Slope Link
             SuperByteBuffer link = getLink(state);
             if (fromTrack.getNextPoint() == fromTrack.getTrackPointType()) {        // Middle
-                float cut_adjacent = 8/16f + (float) offset.z;
-                float length = (float) Math.sqrt(opposite*opposite + cut_adjacent*cut_adjacent);
+                float cut_adjacent = 8 / 16f + (float) offset.z;
+                float length = (float) Math.sqrt(opposite * opposite + cut_adjacent * cut_adjacent);
                 float angleOffset = (float) (Math.atan2(opposite, cut_adjacent));
                 link.centre()
                         .rotateY(yRot)
@@ -96,20 +96,20 @@ public class TrackBeltRenderer {
                         .translate(0, -fromTrack.getPointDownwardOffset(partialTicks), fromTrack.getPointHorizontalOffset())
                         .rotateX(angleOffset * 180f / Math.PI)
                         .scale(1, largeScale, length)
-                        .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(length))
+                        .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(1.0f)) // passing length causes a lot of unintended scroll
                         .unCentre();
                 link.light(light).renderInto(ms, buf.getBuffer(RenderType.solid()));
             } else {                                                                // Ends
-                float length = (float) Math.sqrt(opposite*opposite + adjacent*adjacent + (isLarge ? 4/16f : 0));
+                float length = (float) Math.sqrt(opposite * opposite + adjacent * adjacent + (isLarge ? 4 / 16f : 0));
                 float flip = (part == TrackBaseBlock.TrackPart.START) ? -1 : 1;
-                float angleOffset = (float) (Math.atan2(opposite, adjacent + (isLarge ? 2/16f : 0)));
+                float angleOffset = (float) (Math.atan2(opposite, adjacent + (isLarge ? 2 / 16f : 0)));
                 link.centre()
                         .rotateY(yRot)
-                        .translate(0, -0.5f, (5 / 16f + ((isLarge && fromTrack.getTrackPointType() == PointType.WRAP) ? 2/16f : 0)) * flip)
+                        .translate(0, -0.5f, (5 / 16f + ((isLarge && fromTrack.getTrackPointType() == PointType.WRAP) ? 2 / 16f : 0)) * flip)
                         .translate(0, -fromTrack.getPointDownwardOffset(partialTicks), fromTrack.getPointHorizontalOffset())
                         .rotateX(angleOffset * 180f / Math.PI)
                         .scale(1, largeScale, length)
-                        .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(length))
+                        .shiftUVScrolling(TrackworkSpriteShifts.BELT, scroll.getAtScale(1.0f)) // passing length causes a lot of unintended scroll
                         .unCentre();
                 link.light(light).renderInto(ms, buf.getBuffer(RenderType.solid()));
             }
@@ -132,7 +132,7 @@ public class TrackBeltRenderer {
         }
 
         public float getAtScale(float scale) {
-            float speed = this.trueSpeed / scale;
+            float speed = this.trueSpeed * scale;
 
             if (speed != 0) {
                 double scroll = speed * this.time / (31.5 * 16);
