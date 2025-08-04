@@ -5,6 +5,7 @@ src\main\resources\assets\trackwork
 MIT License
 
 Copyright (c) 2023 endalion
+Copyright (c) 2025 Vikas Dongre <zvikasdongre@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
