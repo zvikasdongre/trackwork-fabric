@@ -3,10 +3,9 @@ package edn.stratodonut.trackwork;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
-import com.simibubi.create.foundation.item.TooltipHelper;
-
 import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
+import net.createmod.ponder.foundation.PonderIndex;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -16,6 +15,8 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+
+import static net.createmod.catnip.lang.FontHelper.Palette.STANDARD_CREATE;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("trackwork")
@@ -29,7 +30,7 @@ public class TrackworkMod
 
     static {
         REGISTRATE.setTooltipModifierFactory(item ->
-                new ItemDescription.Modifier(item, TooltipHelper.Palette.STANDARD_CREATE));
+                new ItemDescription.Modifier(item, STANDARD_CREATE));
     }
 
     public TrackworkMod() { onCtor(); }
@@ -49,12 +50,11 @@ public class TrackworkMod
         TrackBlockEntityTypes.register();
         TrackEntityTypes.register();
         TrackPackets.registerPackets();
-
+        PonderIndex.addPlugin(new TrackPonderPlugin());
         modEventBus.addListener(EventPriority.LOWEST, TrackDatagen::gatherData);
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> TrackPonders::register);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> TrackworkPartialModels::init);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> TrackworkSpriteShifts::init);
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> TrackworkSpriteShifts::init);
     }
 
     public static void warn(String format, Object arg) {
