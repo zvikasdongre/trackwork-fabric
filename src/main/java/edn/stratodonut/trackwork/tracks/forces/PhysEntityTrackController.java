@@ -1,10 +1,10 @@
 package edn.stratodonut.trackwork.tracks.forces;
 
-import edn.stratodonut.trackwork.TrackworkMod;
-import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mojang.datafixers.util.Pair;
+import edn.stratodonut.trackwork.TrackworkMod;
+import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
 import kotlin.jvm.functions.Function1;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
