@@ -58,8 +58,8 @@ public class PhysEntityTrackRenderer extends KineticBlockEntityRenderer<PhysEnti
                 be.getWheelRadius() > 0.8f ? CachedBuffers.partial(TrackworkPartialModels.LARGE_COGS, state) :
                     CachedBuffers.partial(TrackworkPartialModels.MED_COGS, state);
         cogs.center()
-                .rotateY(trackAxis == Direction.Axis.X ? 0 : 90)
-                .rotateX(-angleForBE)
+                .rotateYDegrees(trackAxis == Direction.Axis.X ? 0 : 90)
+                .rotateXDegrees(-angleForBE)
 //                .scale(1, be.getWheelRadius() / 0.5f, be.getWheelRadius() / 0.5f)
                 .translate(0, 9 / 16f, 0)
                 .uncenter();

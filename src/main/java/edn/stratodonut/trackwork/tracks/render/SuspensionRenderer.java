@@ -58,10 +58,10 @@ public class SuspensionRenderer extends KineticBlockEntityRenderer<SuspensionTra
                     be.getWheelRadius() > 0.8f ? CachedBuffers.partial(TrackworkPartialModels.LARGE_SUSPENSION_WHEEL, state) :
                     CachedBuffers.partial(TrackworkPartialModels.MED_SUSPENSION_WHEEL, state);
             wheels.center()
-                    .rotateY(yRot)
+                    .rotateYDegrees(yRot)
                     .translate(0, be.getWheelRadius() - 0.5, 0)
                     .translate(0, -be.getWheelTravel(partialTicks), be.getPointHorizontalOffset())
-                    .rotateX(-angleForBE)
+                    .rotateXDegrees(-angleForBE)
 //                    .scale(1, be.getWheelRadius() / 0.5f, be.getWheelRadius() / 0.5f)
                     .translate(0, 9 / 16f, 0)
                     .uncenter();
