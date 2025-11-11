@@ -5,7 +5,6 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
-import net.createmod.ponder.foundation.PonderIndex;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -50,9 +49,8 @@ public class TrackworkMod
         TrackBlockEntityTypes.register();
         TrackEntityTypes.register();
         TrackPackets.registerPackets();
-        PonderIndex.addPlugin(new TrackPonderPlugin());
         modEventBus.addListener(EventPriority.LOWEST, TrackDatagen::gatherData);
-
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> TrackPonderPlugin::registerPlugin);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> TrackworkPartialModels::init);
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> TrackworkSpriteShifts::init);
     }
