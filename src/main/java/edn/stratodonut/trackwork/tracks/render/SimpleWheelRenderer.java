@@ -38,7 +38,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         Direction.Axis rotationAxis = getRotationAxisOf(be);
         BlockPos visualPos = be.getBlockPos();
         float angleForBE = SimpleWheelRenderer.getAngleForBE(be, visualPos, rotationAxis, partialTicks);
-//
         Direction trackDir = state.getValue(HORIZONTAL_FACING);
 
         float axisMult = -1;
@@ -58,7 +57,6 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         }
 
         float yRot = state.getValue(HORIZONTAL_FACING).toYRot();
-//        float yRot = (trackAxis == Direction.Axis.X) ? 0 : 90;
         float wheelTravel = be.getWheelTravel(partialTicks) - be.getWheelRadius();
         double wheelTuck = Math.sqrt(2.25 - Math.min(1, wheelTravel*wheelTravel)) - 1.5 - axialOffset;
         
@@ -95,9 +93,8 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
             springTransform.accept(springBase, 0f);
             springBase.translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 0, axialOffset)
                     .uncenter();
-            springBase.renderInto(ms, buffer.getBuffer(RenderType.solid()));
-
-//        float springScale = (0.6f * wheelTravel + 1f) / (13.5f/16);
+            springBase.light(light).renderInto(ms, buffer.getBuffer(RenderType.solid()));
+            
             SuperByteBuffer springCoil = CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL_SPRING_COIL, state);
             springCoil.center().rotateYDegrees(-yRot);
             springTransform.accept(springCoil, springAngle);
@@ -106,19 +103,18 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
                     .scale(1, (float) scaleLength / (17f/16), 1)
                     .translate(0, -7/16f, 0)
                     .uncenter();
-            springCoil.renderInto(ms, buffer.getBuffer(RenderType.cutout()));
+            springCoil.light(light).renderInto(ms, buffer.getBuffer(RenderType.cutout()));
         }
 
         {
-            SuperByteBuffer wheels = be.getWheelRadius() > 0.8f ? 
+            SuperByteBuffer wheels = be.getWheelRadius() > 0.8f ?
                     CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL, state) :
                     CachedBuffers.partial(TrackworkPartialModels.MED_SIMPLE_WHEEL, state);
             wheels.center()
-                    .rotateYDegrees(-yRot + be.getSteeringValue() * 30)
-//                    .translate(0, be.getWheelRadius() , 0)
+                    .rotateYDegrees(-yRot)
                     .translate(horizontalOffset * -axisMult, -wheelTravel - 0.5, -wheelTuck)
+                    .rotateYDegrees(be.getSteeringValue() * 30)
                     .rotateZDegrees(-angleForBE)
-//                    .translate(0, 8 / 16f, 0)
                     .uncenter();
 
             wheels.light(light)

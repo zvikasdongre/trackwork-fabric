@@ -13,11 +13,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -233,14 +236,17 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 this.wheelTravel = newWheelTravel;
 
                 // Entity Damage
-                // TODO: Players don't get pushed, why?
-                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos()).deflate(0.5).expandTowards(0, -1.5, 0));
+                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos())
+                        .deflate(0.25)
+                        .expandTowards(0, -1.5, 0)
+                );
                 Vec3 worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos()))));
                 for (LivingEntity e : hits) {
                     push(e, worldPos);
                     Vec3 relPos = e.position().subtract(worldPos);
                     float speed = Math.abs(this.getSpeed());
                     if (speed > 1) e.hurt(TrackDamageSources.runOver(this.level), (speed / 8f) * AllConfigs.server().kinetics.crushingDamage.get());
+                    if (e instanceof ServerPlayer p) p.connection.send(new ClientboundSetEntityMotionPacket(p));
                 }
 
                 BlockState state = this.getBlockState();
@@ -349,8 +355,8 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
 
                 d0 *= d3;
                 d1 *= d3;
-                d0 *= 0.2F;
-                d1 *= 0.2F;
+                d0 *= 0.1F;
+                d1 *= 0.1F;
 
                 if (!entity.isVehicle()) {
                     entity.push(d0, 0.0D, d1);

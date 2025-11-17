@@ -1,5 +1,6 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
+import com.simibubi.create.infrastructure.config.AllConfigs;
 import edn.stratodonut.trackwork.*;
 import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
@@ -13,11 +14,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -47,6 +52,7 @@ import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBloc
 import static edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.*;
 import static net.minecraft.ChatFormatting.GRAY;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements ITrackPointProvider {
     private float wheelRadius;
@@ -152,6 +158,8 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 wheel.setPos(VectorConversionsMCKt.toMinecraft(wheelGlobalPos));
                 slevel.addFreshEntity(wheel);
 
+                VSGameUtilsKt.getShipObjectWorld(slevel).disableCollisionBetweenBodies(wheelId, ship.getId());
+
                 PhysEntityTrackData.CreateData createData = this.constrainWheel(ship, wheelId, trackLocalPos);
                 this.trackID = controller.addTrackBlock(createData);
                 this.wheelID = wheel.getUUID();
@@ -255,7 +263,15 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 );
                 controller.updateTrackBlock(this.trackID, data);
 
-//                shipMass = (float) ship.getInertiaData().getMass();
+                // Entity pushing, no damage here
+                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos())
+                        .deflate(0.25)
+                );
+                Vec3 worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos()))));
+                for (LivingEntity e : hits) {
+                    SuspensionTrackBlockEntity.push(e, worldPos);
+                    if (e instanceof ServerPlayer p) p.connection.send(new ClientboundSetEntityMotionPacket(p));
+                }
             }
         }
     }

@@ -35,24 +35,14 @@ public class PhysEntityTrackRenderer extends KineticBlockEntityRenderer<PhysEnti
         //}
 
         BlockState state = be.getBlockState();
-//        Boolean alongFirst = state.getValue(GantryCarriageBlock.AXIS_ALONG_FIRST_COORDINATE);
         Direction.Axis rotationAxis = getRotationAxisOf(be);
         BlockPos visualPos = be.getBlockPos();
         float angleForBE = getAngleForBE(be, visualPos, rotationAxis);
-//
         Direction.Axis trackAxis = state.getValue(TrackBaseBlock.AXIS);
-//        for (Direction.Axis axis : Iterate.axes)
-//            if (axis != rotationAxis && axis != facing.getAxis())
-//                trackAxis = axis;
 
         if (trackAxis == Direction.Axis.X)
             angleForBE *= -1;
 
-//        if (trackAxis == Direction.Axis.Y)
-//            if (facing == Direction.NORTH || facing == Direction.EAST)
-//                angleForBE *= -1;
-
-//        SuperByteBuffer cogs = CachedBufferer.partial(TrackworkPartialModels.COGS, state);
         SuperByteBuffer cogs = be.getWheelRadius() < 0.6f ?
                 CachedBuffers.partial(TrackworkPartialModels.COGS, state) :
                 be.getWheelRadius() > 0.8f ? CachedBuffers.partial(TrackworkPartialModels.LARGE_COGS, state) :
@@ -60,7 +50,6 @@ public class PhysEntityTrackRenderer extends KineticBlockEntityRenderer<PhysEnti
         cogs.center()
                 .rotateYDegrees(trackAxis == Direction.Axis.X ? 0 : 90)
                 .rotateXDegrees(-angleForBE)
-//                .scale(1, be.getWheelRadius() / 0.5f, be.getWheelRadius() / 0.5f)
                 .translate(0, 9 / 16f, 0)
                 .uncenter();
 
