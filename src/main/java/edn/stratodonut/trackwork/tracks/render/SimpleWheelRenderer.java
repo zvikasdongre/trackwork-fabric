@@ -40,10 +40,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         float angleForBE = SimpleWheelRenderer.getAngleForBE(be, visualPos, rotationAxis, partialTicks);
         Direction trackDir = state.getValue(HORIZONTAL_FACING);
 
-        float axisMult = -1;
-        if (trackDir.getAxis() == Direction.Axis.X) {
-            axisMult = 1;
-        }
+        float axisMult = (trackDir.getAxis() == Direction.Axis.X) ? 1 : -1;
 
         float horizontalOffset = be.getPointHorizontalOffset();
         float axialOffset = be.getPointAxialOffset();
@@ -58,13 +55,22 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
 
         float yRot = state.getValue(HORIZONTAL_FACING).toYRot();
         float wheelTravel = be.getWheelTravel(partialTicks) - be.getWheelRadius();
-        double wheelTuck = Math.sqrt(2.25 - Math.min(1, wheelTravel*wheelTravel)) - 1.5 - axialOffset;
-        
-        ribTransform(CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB, state), yRot, wheelTravel, ms, buffer, light,
-                new Vec3(horizontalOffset * -axisMult, 0, axialOffset), springFlip);
-        ribTransform(CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB_UPPER, state), yRot, wheelTravel, ms, buffer, light,
-                new Vec3(horizontalOffset * -axisMult, -9/16f, axialOffset), false);
+        double wheelTuck = Math.sqrt(2.25 - Math.min(1, wheelTravel * wheelTravel)) - 1.5 - axialOffset;
+        // always render lower rib (unless NO_LOWER_RIB variant)
+        if (state.hasProperty(WheelBlock.VISUAL_VARIANT)
+                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_lower_rib) {
+            ribTransform(CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB, state), yRot, wheelTravel, ms, buffer, light,
+                    new Vec3(horizontalOffset * -axisMult, 0, axialOffset), springFlip);
+        }
 
+        // render upper rib (unless NO_SPRING or NO_LOWER_RIB variant)
+        if (state.hasProperty(WheelBlock.VISUAL_VARIANT)
+                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_spring
+                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_lower_rib) {
+            ribTransform(CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL_RIB_UPPER, state), yRot, wheelTravel, ms, buffer, light,
+                    new Vec3(horizontalOffset * -axisMult, -9/16f, axialOffset), false);
+        }
+        // spring transform helper
 //        19.5
         final BiConsumer<SuperByteBuffer, Float> springTransform = (spring, angle) ->
                 spring
@@ -82,9 +88,10 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         double ribAngle = Math.atan((wheelTravel + 0.3f) / 1.1);
         double scaleLength = Math.sqrt(springEndPointLength*springEndPointLength + diagonalLength*diagonalLength
                 - 2*springEndPointLength*diagonalLength*Math.cos(Math.PI/2 + ribAngle - diagonalRibOffset));
-        
+
         if (state.hasProperty(WheelBlock.VISUAL_VARIANT)
-                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_spring) {
+                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_spring
+                && state.getValue(WheelBlock.VISUAL_VARIANT) != WheelBlock.VisualVariant.no_lower_rib) {
             float springAngle = (float) (Math.toDegrees(Math.asin((springEndPointLength * Math.sin(Math.PI/2 + ribAngle
                     - diagonalRibOffset)) / scaleLength) + diagonalSpringOffset - Math.PI/2));
             
@@ -107,11 +114,16 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
         }
 
         {
-            SuperByteBuffer wheels = be.getWheelRadius() > 0.8f ?
-                    CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL, state) :
-                    CachedBuffers.partial(TrackworkPartialModels.MED_SIMPLE_WHEEL, state);
+            SuperByteBuffer wheels = be.getWheelRadius() > 1f
+                    ? CachedBuffers.partial(TrackworkPartialModels.LARGE_SIMPLE_WHEEL, state)
+                    : be.getWheelRadius() > 0.8f
+                    ? CachedBuffers.partial(TrackworkPartialModels.SIMPLE_WHEEL, state)
+                    : be.getWheelRadius() > 0.5f
+                    ? CachedBuffers.partial(TrackworkPartialModels.MED_SIMPLE_WHEEL, state)
+                    : CachedBuffers.partial(TrackworkPartialModels.SMALL_SIMPLE_WHEEL, state);
+
             wheels.center()
-                    .rotateYDegrees(-yRot)
+                    .rotateYDegrees(-yRot + be.getSteeringValue() * 30)
                     .translate(horizontalOffset * -axisMult, -wheelTravel - 0.5, -wheelTuck)
                     .rotateYDegrees(be.getSteeringValue() * 30)
                     .rotateZDegrees(-angleForBE)

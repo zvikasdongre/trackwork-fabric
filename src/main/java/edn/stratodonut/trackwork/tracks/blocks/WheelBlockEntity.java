@@ -34,8 +34,10 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
+import org.valkyrienskies.core.impl.bodies.properties.BodyKinematicsImpl;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.physics_api.PoseVel;
 
@@ -84,12 +86,26 @@ public class WheelBlockEntity extends KineticBlockEntity {
         return be;
     }
 
+    public static WheelBlockEntity large(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        WheelBlockEntity be = new WheelBlockEntity(type, pos, state);
+        be.wheelRadius = 1.5f;
+        be.suspensionTravel = 2f;
+        return be;
+    }
+
+    public static WheelBlockEntity small(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        WheelBlockEntity be = new WheelBlockEntity(type, pos, state);
+        be.wheelRadius = 0.5f;
+        be.suspensionTravel = 1f;
+        return be;
+    }
+
     @Override
     public void remove() {
         super.remove();
 
         if (this.level != null && !this.level.isClientSide && this.assembled) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 controller.removeTrackBlock(this.getBlockPos());
@@ -100,7 +116,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
     private void assemble() {
         if (!WheelBlock.isValid(this.getBlockState().getValue(HORIZONTAL_FACING))) return;
         if (this.level != null && !this.level.isClientSide) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null && Math.abs(1.0 - ship.getTransform().getShipToWorldScaling().length()) > 0.01) {
                 this.assembled = true;
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
@@ -152,11 +168,10 @@ public class WheelBlockEntity extends KineticBlockEntity {
                     TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_AMBIENT, worldPosition, pitch);
 
                     Vector3dc shipSpeed = SimpleWheelController.accumulatedVelocity(s.getTransform(),
-                            new PoseVel(
-                                    s.getTransform().getPositionInWorld(),
-                                    s.getTransform().getShipToWorldRotation(),
+                            new BodyKinematicsImpl(
                                     s.getVelocity(),
-                                    s.getOmega()
+                                    s.getAngularVelocity(),
+                                    s.getTransform()
                             ), ground);
                     float slip = (float) reversedWheelVel.negate(new Vector3d()).sub(shipSpeed).length();
                     pitch = Mth.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
@@ -185,15 +200,20 @@ public class WheelBlockEntity extends KineticBlockEntity {
             double restOffset = this.wheelRadius - 0.5f;
             float trackRPM = this.getDrivenSpeed();
             double susScaled = this.suspensionTravel * this.suspensionScale;
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
                 Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
 
 //                 Steering Control
                 int bestSignal = this.level.getBestNeighborSignal(this.getBlockPos());
+                float targetSteeringValue = bestSignal / 15f * ((dir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : -1));
                 float oldSteeringValue = this.steeringValue;
-                this.steeringValue = bestSignal / 15f * ((dir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : -1));
+
+                // Smooth steering interpolation
+                float steeringSpeed = 0.5f; // Adjust this value to control steering speed (0.1 = slower, 0.3 = faster)
+                this.steeringValue = Mth.lerp(steeringSpeed, this.steeringValue, targetSteeringValue);
+
                 float deltaSteeringValue = oldSteeringValue - this.steeringValue;
                 this.onLinkedWheel(wbe -> wbe.setLinkedSteeringValue(this.steeringValue));
 

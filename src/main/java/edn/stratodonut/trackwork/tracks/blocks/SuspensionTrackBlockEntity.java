@@ -36,8 +36,10 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
+import org.valkyrienskies.core.impl.bodies.properties.BodyKinematicsImpl;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.physics_api.PoseVel;
 
@@ -99,7 +101,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
         super.remove();
 
         if (this.level != null && !this.level.isClientSide && this.assembled) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
                 controller.removeTrackBlock(this.trackID);
@@ -110,7 +112,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     private void assemble() {
         if (!TrackBaseBlock.isValidAxis(this.getBlockState().getValue(AXIS))) return;
         if (this.level != null && !this.level.isClientSide) {
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null && Math.abs(1.0 - ship.getTransform().getShipToWorldScaling().length()) > 0.01) {
                 this.assembled = true;
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
@@ -169,11 +171,10 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                     TrackSoundScapes.play(TrackAmbientGroups.TRACK_GROUND_AMBIENT, worldPosition, pitch*0.5f);
 
                     Vector3dc shipSpeed = SimpleWheelController.accumulatedVelocity(s.getTransform(),
-                            new PoseVel(
-                                    s.getTransform().getPositionInWorld(),
-                                    s.getTransform().getShipToWorldRotation(),
+                            new BodyKinematicsImpl(
                                     s.getVelocity(),
-                                    s.getOmega()
+                                    s.getAngularVelocity(),
+                                    s.getTransform()
                             ), ground);
                     float slip = (float) reversedVel.add(shipSpeed, new Vector3d()).length();
                     pitch = Mth.clamp((Math.abs(slip) / 10f) + .45f, .85f, 3f);
@@ -191,7 +192,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             double restOffset = this.wheelRadius - 0.5f;
             float trackRPM = this.getSpeed();
             double susScaled = this.suspensionTravel * this.suspensionScale;
-            ServerShip ship = (ServerShip)this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
                 Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
                 Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));

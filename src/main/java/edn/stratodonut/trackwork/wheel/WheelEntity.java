@@ -9,8 +9,8 @@ import org.joml.Matrix3d;
 import org.joml.Vector3d;
 import org.valkyrienskies.core.api.ships.properties.ShipInertiaData;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
-import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
-import org.valkyrienskies.core.apigame.physics.VSWheelCollisionShapeData;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityData;
+import org.valkyrienskies.core.internal.physics.VSWheelCollisionShapeData;
 import org.valkyrienskies.core.impl.game.ships.ShipInertiaDataImpl;
 import org.valkyrienskies.mod.common.entity.VSPhysicsEntity;
 

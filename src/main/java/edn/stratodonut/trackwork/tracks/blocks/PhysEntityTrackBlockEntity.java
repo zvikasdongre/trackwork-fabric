@@ -31,15 +31,18 @@ import org.joml.Math;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
-import org.valkyrienskies.core.apigame.constraints.VSAttachmentConstraint;
-import org.valkyrienskies.core.apigame.constraints.VSConstraintAndId;
-import org.valkyrienskies.core.apigame.constraints.VSHingeOrientationConstraint;
-import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
+import org.valkyrienskies.core.internal.joints.*;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityData;
 import org.valkyrienskies.core.impl.game.ships.ShipTransformImpl;
+import org.valkyrienskies.mod.api.ValkyrienSkies;
+import org.valkyrienskies.mod.api.VsApi;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
+import org.valkyrienskies.mod.common.util.GameToPhysicsAdapter;
 import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
 
 import java.lang.ref.WeakReference;
@@ -90,7 +93,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         super.destroy();
 
         if (this.level != null && !this.level.isClientSide && this.assembled) {
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
                 controller.removeTrackBlock((ServerLevel) this.level, this.trackID);
@@ -105,7 +108,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 
         if (!this.level.isClientSide && this.assembled) {
             Entity e = ((ServerLevel) this.level).getEntity(this.wheelID);
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 if (e instanceof WheelEntity wheel) {
                     if (this.constrainWheel(ship, wheel.getShipId(), toJOML(Vec3.atCenterOf(this.getBlockPos()))) != null)
@@ -137,7 +140,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         if (this.level != null && !this.level.isClientSide) {
             if (!isValidAxis(this.getBlockState().getValue(AXIS))) return;
             ServerLevel slevel = (ServerLevel) this.level;
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
                 if (this.assembled) {
@@ -158,7 +161,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 wheel.setPos(VectorConversionsMCKt.toMinecraft(wheelGlobalPos));
                 slevel.addFreshEntity(wheel);
 
-                VSGameUtilsKt.getShipObjectWorld(slevel).disableCollisionBetweenBodies(wheelId, ship.getId());
+                ValkyrienSkiesMod.getOrCreateGTPA(ValkyrienSkies.getDimensionId(level)).disableCollisionBetween(wheelId, ship.getId());
 
                 PhysEntityTrackData.CreateData createData = this.constrainWheel(ship, wheelId, trackLocalPos);
                 this.trackID = controller.addTrackBlock(createData);
@@ -169,7 +172,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         }
     }
 
-    private PhysEntityTrackData.CreateData constrainWheel(ServerShip ship, long wheelId, Vector3dc trackLocalPos) {
+    private PhysEntityTrackData.CreateData constrainWheel(LoadedServerShip ship, long wheelId, Vector3dc trackLocalPos) {
         ServerLevel slevel = (ServerLevel) this.level;
         double attachCompliance = 1e-8;
         double attachMaxForce = 1e150;
@@ -185,28 +188,40 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 //                        UP,
 //                        SUSPENSION_TRAVEL
 //                );
-        VSAttachmentConstraint slider = new VSAttachmentConstraint(
+//        VSAttachmentConstraint slider = new VSAttachmentConstraint(
+//                ship.getId(),
+//                wheelId,
+//                attachCompliance,
+//                trackLocalPos,
+//                new Vector3d(0, 0, 0),
+//                attachMaxForce,
+//                0.0
+//        );
+//        VSHingeOrientationConstraint axle = new VSHingeOrientationConstraint(
+//                ship.getId(),
+//                wheelId,
+//                attachCompliance,
+//                new Quaterniond().fromAxisAngleDeg(axis, 0),
+//                new Quaterniond().fromAxisAngleDeg(new Vector3d(0, 0, 1), 0),
+//                hingeMaxForce
+//        );
+
+        VSRevoluteJoint axle = new VSRevoluteJoint(
                 ship.getId(),
+                new VSJointPose(trackLocalPos, new Quaterniond().fromAxisAngleDeg(axis, 0)),
                 wheelId,
-                attachCompliance,
-                trackLocalPos,
-                new Vector3d(0, 0, 0),
-                attachMaxForce,
-                0.0
-        );
-        VSHingeOrientationConstraint axle = new VSHingeOrientationConstraint(
-                ship.getId(),
-                wheelId,
-                attachCompliance,
-                new Quaterniond().fromAxisAngleDeg(axis, 0),
-                new Quaterniond().fromAxisAngleDeg(new Vector3d(0, 0, 1), 0),
-                hingeMaxForce
+                new VSJointPose(new Vector3d(0, 0, 0), new Quaterniond().fromAxisAngleDeg(new Vector3d(0, 0, 1), 0)),
+                new VSJointMaxForceTorque((float) attachMaxForce, (float) hingeMaxForce),
+                null,
+                null,
+                null,
+                null,
+                true
         );
 
 
-        Integer sliderId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(slider);
-        Integer axleId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(axle);
-        if (sliderId == null || axleId == null) return null;
+        ValkyrienSkiesMod.getOrCreateGTPA(ValkyrienSkies.getDimensionId(slevel)).addJoint(axle, 3, (id) -> {PhysEntityTrackController.getOrCreate(ship).trackData.get(this.trackID).axleId = id;} );
+        //if (sliderId == null || axleId == null) return null;
 
         PhysEntityTrackData.CreateData trackData = new PhysEntityTrackData.CreateData(
                 trackLocalPos,
@@ -214,8 +229,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 wheelId,
                 0,
                 0,
-                new VSConstraintAndId(sliderId, slider),
-                new VSConstraintAndId(axleId, axle),
+                axle,
                 this.getSpeed()
         );
         return trackData;
@@ -235,7 +249,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
             return;
         }
         if (this.assembled && !this.level.isClientSide) {
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 WheelEntity wheel = this.wheel.get();
                 if (wheel == null || !wheel.isAlive() || wheel.isRemoved()) {

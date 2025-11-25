@@ -11,10 +11,10 @@ import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 import org.joml.Vector3f;
-import org.valkyrienskies.core.api.ships.PhysShip;
-import org.valkyrienskies.core.api.ships.ServerShip;
-import org.valkyrienskies.core.api.ships.ShipForcesInducer;
+import org.valkyrienskies.core.api.bodies.properties.BodyKinematics;
+import org.valkyrienskies.core.api.ships.*;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
+import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
 import org.valkyrienskies.physics_api.PoseVel;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @JsonAutoDetect(
         fieldVisibility = JsonAutoDetect.Visibility.ANY
 )
-public class SimpleWheelController implements ShipForcesInducer {
+public final class SimpleWheelController implements ShipPhysicsListener {
     @JsonIgnore
     public static final double RPM_TO_RADS = 0.10471975512;
     @JsonIgnore
@@ -49,12 +49,13 @@ public class SimpleWheelController implements ShipForcesInducer {
 
     private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
     private volatile float suspensionStiffness = 1.0f;
+    private volatile float suspensionDampening = 1.2f;
 
     public SimpleWheelController() {}
 
-    public static SimpleWheelController getOrCreate(ServerShip ship) {
+    public static SimpleWheelController getOrCreate(LoadedServerShip ship) {
         if (ship.getAttachment(SimpleWheelController.class) == null) {
-            ship.saveAttachment(SimpleWheelController.class, new SimpleWheelController());
+            ship.setAttachment(SimpleWheelController.class, new SimpleWheelController());
         }
 
         return ship.getAttachment(SimpleWheelController.class);
@@ -63,7 +64,7 @@ public class SimpleWheelController implements ShipForcesInducer {
     private float debugTick = 0;
 
     @Override
-    public void applyForcesAndLookupPhysShips(@NotNull PhysShip physShip, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
+    public void physTick(@NotNull PhysShip physShip, @NotNull PhysLevel physLevel) {
         while(!this.createdTrackData.isEmpty()) {
             Pair<Long, SimpleWheelData.SimpleWheelCreateData> createData = this.createdTrackData.remove();
             this.trackData.put(createData.getFirst(), SimpleWheelData.from(createData.getSecond()));
@@ -90,29 +91,25 @@ public class SimpleWheelController implements ShipForcesInducer {
 
         double coefficientOfPower = Math.min(2.0d, 3d / this.trackData.size());
         this.trackData.forEach((id, data) -> {
-            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), coefficientOfPower, lookupPhysShip);
+            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), coefficientOfPower, physLevel);
             if (forces.getFirst().isFinite()) {
                 netLinearForce.add(forces.getFirst());
                 netTorque.add(forces.getSecond());
             }
         });
 
-        if (netLinearForce.isFinite() && netLinearForce.length()/((PhysShipImpl) physShip).getInertia().getShipMass() < MAXIMUM_G) {
+        if (netLinearForce.isFinite() && netLinearForce.length()/((PhysShipImpl) physShip).getMass() < MAXIMUM_G) {
             physShip.applyInvariantForce(netLinearForce);
             if (netTorque.isFinite()) physShip.applyInvariantTorque(netTorque);
         }
     }
 
-    @Override
-    public void applyForces(@NotNull PhysShip physShip) {
-        // DO NOTHING
-    }
-
-    private Pair<Vector3dc, Vector3dc> computeForce(SimpleWheelData data, PhysShipImpl ship, double coefficientOfPower, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
-        PoseVel pose = ship.getPoseVel();
+    private Pair<Vector3dc, Vector3dc> computeForce(SimpleWheelData data, PhysShipImpl ship, double coefficientOfPower, PhysLevel physLevel) {
+        BodyKinematics pose = ship.getKinematics();
         ShipTransform shipTransform = ship.getTransform();
-        double m =  ship.getInertia().getShipMass();
-        double gravity_factor = Math.max(0, shipTransform.getShipToWorldRotation().transform(UP, new Vector3d()).dot(UP));
+        double m =  ship.getMass();
+        Vector3dc localUp = shipTransform.getShipToWorldRotation().transform(UP, new Vector3d());
+        double gravity_factor = Math.max(0.3, localUp.dot(UP));
         Vector3dc trackRelPosShip = data.wheelOriginPosition.sub(shipTransform.getPositionInShip(), new Vector3d());
 //            Vector3dc worldSpaceTrackOrigin = shipTransform.getShipToWorld().transformPosition(data.trackOriginPosition.get(new Vector3d()));
         Vector3d tForce = new Vector3d(); //data.trackSpeed;
@@ -120,8 +117,8 @@ public class SimpleWheelController implements ShipForcesInducer {
         Vector3dc trackSurface = data.driveForceVector.mul(data.wheelRPM * RPM_TO_RADS * 0.5, new Vector3d());
         Vector3dc velocityAtPosition = accumulatedVelocity(shipTransform, pose, data.wheelContactPosition);
         if (data.isWheelGrounded && data.groundShipId != null) {
-            PhysShipImpl ground = (PhysShipImpl) lookupPhysShip.invoke(data.groundShipId);
-            Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getPoseVel(), data.wheelContactPosition);
+            PhysShipImpl ground = (PhysShipImpl) physLevel.getShipById(data.groundShipId);
+            Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getKinematics(), data.wheelContactPosition);
             velocityAtPosition = velocityAtPosition.sub(groundShipVelocity, new Vector3d());
         }
 
@@ -129,8 +126,14 @@ public class SimpleWheelController implements ShipForcesInducer {
         if (data.isWheelGrounded) {
             double suspensionDelta = velocityAtPosition.dot(trackNormal) + data.getSuspensionCompressionDelta().length();
             double tilt = 1 + this.tilt(trackRelPosShip);
-            tForce.add(data.suspensionCompression.mul(m * 4.0 * coefficientOfPower * this.suspensionStiffness * tilt, new Vector3d()));
-            tForce.add(trackNormal.mul(m * 1.2 * -suspensionDelta * coefficientOfPower * this.suspensionStiffness, new Vector3d()));
+
+            // Spring force (stiffness) - apply in world coordinates but calculated relative to local up
+            Vector3dc springForce = data.suspensionCompression.mul(m * 4.0 * coefficientOfPower * this.suspensionStiffness * tilt, new Vector3d());
+            tForce.add(springForce);
+
+            // Damper force (dampening) - apply in world coordinates but calculated relative to local up
+            Vector3dc damperForce = trackNormal.mul(m * -suspensionDelta * coefficientOfPower * this.suspensionDampening, new Vector3d());
+            tForce.add(damperForce);
             // Really half-assed antislip when the spring is stronger than friction (what?)
             if (data.wheelRPM == 0) {
                 tForce = new Vector3d(0, tForce.y(), 0);
@@ -167,8 +170,8 @@ public class SimpleWheelController implements ShipForcesInducer {
         return new Pair<>(tForce, torque);
     }
 
-    public static Vector3dc accumulatedVelocity(ShipTransform t, PoseVel pose, Vector3dc worldPosition) {
-        return pose.getVel().add(pose.getOmega().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
+    public static Vector3dc accumulatedVelocity(ShipTransform t, BodyKinematics pose, Vector3dc worldPosition) {
+        return pose.getVelocity().add(pose.getAngularVelocity().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
     }
 
     public final void addTrackBlock(BlockPos pos, SimpleWheelData.SimpleWheelCreateData data) {

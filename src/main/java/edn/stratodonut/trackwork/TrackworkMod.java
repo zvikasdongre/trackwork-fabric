@@ -5,6 +5,9 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
+import edn.stratodonut.trackwork.tracks.forces.PhysEntityTrackController;
+import edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController;
+import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -14,6 +17,13 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+import org.valkyrienskies.core.api.VsCoreApi;
+import org.valkyrienskies.core.api.attachment.AttachmentRegistration;
+import org.valkyrienskies.core.api.attachment.AttachmentSerializer;
+import org.valkyrienskies.mod.api.ValkyrienSkies;
+import org.valkyrienskies.mod.api_impl.events.VsApiImpl;
+import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
 import static net.createmod.catnip.lang.FontHelper.Palette.STANDARD_CREATE;
 
@@ -40,6 +50,30 @@ public class TrackworkMod
                 .getModEventBus();
 
         REGISTRATE.registerEventListeners(modEventBus);
+
+        VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
+                .newAttachmentRegistrationBuilder(PhysEntityTrackController.class)
+                .useLegacySerializer()
+                .build()
+        );
+
+        VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
+                .newAttachmentRegistrationBuilder(PhysicsTrackController.class)
+                .useLegacySerializer()
+                .build()
+        );
+
+        VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
+                .newAttachmentRegistrationBuilder(SimpleWheelController.class)
+                .useLegacySerializer()
+                .build()
+        );
+
+        VSGameUtilsKt.getVsCore().getShipLoadEvent().on(ship -> {
+            PhysEntityTrackController.getOrCreate(ship.getShip());
+            PhysicsTrackController.getOrCreate(ship.getShip());
+            SimpleWheelController.getOrCreate(ship.getShip());
+        });
 
         TrackworkConfigs.register(modLoadingContext);
         TrackSounds.register(modEventBus);
