@@ -270,10 +270,9 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     // Ground pressure?
     private @NotNull WheelBlockEntity.ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Direction.Axis axis, Vec3 start, Vec3 dir, float steeringValue) {
         //BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), 20.0);
+        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), 1.0);
 
         if (bResult == null) {
-            System.out.println("wheres my fuckin raycast");
             return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
         }
         if (bResult.getDistance() < 0) {
@@ -282,8 +281,6 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         PhysShip hitShip = bResult.getHitBody();
         long hitShipId = hitShip.getId();
         if (hitShip != null) {
-            System.out.println("Hit ship ID: " + hitShipId);
-            System.out.println("Own ship ID: " + ship.getId());
             if (hitShip.equals(ship)) return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
             hitShipId = hitShip.getId();
         }
