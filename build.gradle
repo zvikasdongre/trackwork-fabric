@@ -217,7 +217,7 @@ dependencies {
     // Template: runtimeOnly fg.deobf("curse.maven:MOD_SLUG-PROJECT_ID:FILE_ID")
 
     // Drive by Wire - With deobfuscation for development environment
-    runtimeOnly fg.deobf("curse.maven:drive-by-wire-1192722:6224008")
+    //runtimeOnly fg.deobf("curse.maven:drive-by-wire-1192722:6224008")
 
     // Add your CurseForge mods here using the template above:
     // runtimeOnly fg.deobf("curse.maven:MOD_SLUG-PROJECT_ID:FILE_ID")

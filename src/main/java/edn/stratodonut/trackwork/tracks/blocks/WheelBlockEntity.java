@@ -246,14 +246,14 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 SimpleWheelData.SimpleWheelUpdateData data = new SimpleWheelData.SimpleWheelUpdateData(
-                        toJOML(worldSpaceStart.add(worldSpaceOffset)),
-                        forceVec,
-                        toJOML(worldSpaceNormal),
-                        suspensionForce,
-                        isFreespin,
-                        clipResult.groundShipId,
-                        isOnGround,
-                        trackRPM
+                        this.getSteeringValue(),
+                        trackRPM,
+                        axis,
+                        this.getPointAxialOffset(),
+                        this.getPointHorizontalOffset(),
+                        susScaled,
+                        this.wheelRadius,
+                        isFreespin
                 );
                 this.suspensionScale = controller.updateTrackBlock(this.getBlockPos(), data);
                 float newWheelTravel = (float) (suspensionTravel + restOffset);
