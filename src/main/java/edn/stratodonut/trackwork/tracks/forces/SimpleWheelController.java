@@ -6,14 +6,8 @@ import com.mojang.datafixers.util.Pair;
 import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
 import edn.stratodonut.trackwork.tracks.data.SimpleWheelData;
-import kotlin.Triple;
-import kotlin.jvm.functions.Function1;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
@@ -26,9 +20,7 @@ import org.valkyrienskies.core.api.ships.*;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
-import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
-import org.valkyrienskies.physics_api.PoseVel;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -151,7 +143,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
                                 .add(TrackworkUtil.getAxisAsVec(axis).mul(axialOffset)), new Vector3d()));
 
         Vector3dc forceVec;
-        WheelBlockEntity.ClipResult clipResult = clipAndResolvePhys(physLevel, ship, axis, worldSpaceStart.add(worldSpaceOffset).add(worldSpaceFutureOffset), worldSpaceNormal, steeringValue);
+        WheelBlockEntity.ClipResult clipResult = clipAndResolvePhys(physLevel, ship, axis, worldSpaceStart.add(worldSpaceOffset).add(worldSpaceFutureOffset), worldSpaceNormal, steeringValue, steeringInfo.wheelRadius());
         forceVec = clipResult.trackTangent().mul(steeringInfo.wheelRadius() / 0.5, new Vector3d());
 
         double suspensionTravel = clipResult.suspensionLength().lengthSqr() == 0 ? susScaled : clipResult.suspensionLength().length() - 0.5;
@@ -268,11 +260,12 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
     // TODO: Terrain dynamics
     // Ground pressure?
-    private @NotNull WheelBlockEntity.ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Direction.Axis axis, Vec3 start, Vec3 dir, float steeringValue) {
+    private WheelBlockEntity.@NotNull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Direction.Axis axis, Vec3 start, Vec3 dir, float steeringValue, double wheelRadius) {
         //BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), 1.0);
+        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), wheelRadius + 0.5);
 
         if (bResult == null) {
+            //System.out.println("Wheel raycast returned null, ignoring.");
             return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
         }
         if (bResult.getDistance() < 0) {
@@ -281,7 +274,10 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         PhysShip hitShip = bResult.getHitBody();
         long hitShipId = hitShip.getId();
         if (hitShip != null) {
-            if (hitShip.equals(ship)) return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
+            if (hitShipId == ship.getId()) {
+                //System.out.println("Wheel raycast hit own ship, ignoring.");
+                return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
+            }
             hitShipId = hitShip.getId();
         }
 
