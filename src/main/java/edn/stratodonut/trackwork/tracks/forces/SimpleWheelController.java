@@ -262,7 +262,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     // Ground pressure?
     private WheelBlockEntity.@NotNull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Direction.Axis axis, Vec3 start, Vec3 dir, float steeringValue, double wheelRadius) {
         //BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), wheelRadius + 0.5);
+        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), wheelRadius + 1.0);
 
         if (bResult == null) {
             //System.out.println("Wheel raycast returned null, ignoring.");
