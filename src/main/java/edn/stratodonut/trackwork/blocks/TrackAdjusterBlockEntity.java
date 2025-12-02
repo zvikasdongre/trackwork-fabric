@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Vector3f;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
 
@@ -23,7 +24,7 @@ public class TrackAdjusterBlockEntity extends KineticBlockEntity {
         super.destroy();
 
         if (this.level.isClientSide) return;
-        ServerShip ship = VSGameUtilsKt.getShipObjectManagingPos((ServerLevel)this.level, this.getBlockPos());
+        LoadedServerShip ship = VSGameUtilsKt.getShipObjectManagingPos((ServerLevel)this.level, this.getBlockPos());
         if (ship != null) {
             PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
             controller.resetSuspension();
@@ -35,7 +36,7 @@ public class TrackAdjusterBlockEntity extends KineticBlockEntity {
         super.tick();
 
         if (this.level.isClientSide) return;
-        ServerShip ship = VSGameUtilsKt.getShipObjectManagingPos((ServerLevel)this.level, this.getBlockPos());
+        LoadedServerShip ship = VSGameUtilsKt.getShipObjectManagingPos((ServerLevel)this.level, this.getBlockPos());
         if (ship != null) {
             Direction.Axis axis = this.getBlockState().getValue(RotatedPillarKineticBlock.AXIS);
             Vector3f vec = Direction.get(Direction.AxisDirection.POSITIVE, axis).step();

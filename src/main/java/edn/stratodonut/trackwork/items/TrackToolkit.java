@@ -29,6 +29,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
@@ -109,7 +110,7 @@ public class TrackToolkit extends Item {
                         Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
                         if (ship == null) return InteractionResult.FAIL;
                         if (!level.isClientSide) {
-                            PhysicsTrackController controller = PhysicsTrackController.getOrCreate((ServerShip) ship);
+                            PhysicsTrackController controller = PhysicsTrackController.getOrCreate((LoadedServerShip) ship);
                             float result = controller.setDamperCoefficient(isSneaking ? -1f : 1f);
 
                             chatMessage.append("Adjusted suspension stiffness to "+ result);
@@ -122,7 +123,7 @@ public class TrackToolkit extends Item {
                         Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
                         if (ship == null) return InteractionResult.FAIL;
                         if (!level.isClientSide) {
-                            SimpleWheelController controller = SimpleWheelController.getOrCreate((ServerShip) ship);
+                            SimpleWheelController controller = SimpleWheelController.getOrCreate((LoadedServerShip) ship);
                             float result = controller.setDamperCoefficient(isSneaking ? -1f : 1f);
 
                             chatMessage.append("Adjusted suspension stiffness to "+ result);

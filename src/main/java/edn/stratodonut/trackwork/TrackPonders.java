@@ -6,6 +6,8 @@ import edn.stratodonut.trackwork.tracks.TrackPonderScenes;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
 
+import javax.sound.midi.Track;
+
 public class TrackPonders {
 
     public static final boolean REGISTER_DEBUG_SCENES = false;
@@ -20,7 +22,7 @@ public class TrackPonders {
                         TrackBlocks.MED_PHYS_TRACK, TrackBlocks.MED_SUSPENSION_TRACK)
                 .addStoryBoard("tracks", TrackPonderScenes::trackTutorial);
 
-        HELPER.forComponents(TrackBlocks.SIMPLE_WHEEL, TrackBlocks.MED_SIMPLE_WHEEL)
+        HELPER.forComponents(TrackBlocks.SIMPLE_WHEEL, TrackBlocks.MED_SIMPLE_WHEEL, TrackBlocks.LARGE_SIMPLE_WHEEL)
                 .addStoryBoard("wheels", TrackPonderScenes::wheelTutorial);
     }
 

@@ -5,18 +5,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mojang.datafixers.util.Pair;
 import edn.stratodonut.trackwork.TrackworkMod;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
-import kotlin.jvm.functions.Function1;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
-import org.valkyrienskies.core.api.ships.PhysShip;
-import org.valkyrienskies.core.api.ships.ServerShip;
-import org.valkyrienskies.core.api.ships.ShipForcesInducer;
+import org.valkyrienskies.core.api.ships.*;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
+import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
-import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.core.internal.world.VsiPhysLevel;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @JsonAutoDetect(
         fieldVisibility = JsonAutoDetect.Visibility.ANY
 )
-public class PhysEntityTrackController implements ShipForcesInducer {
+public final class PhysEntityTrackController implements ShipPhysicsListener {
     @JsonIgnore
     public static final double RPM_TO_RADS = 0.10471975512;
     @JsonIgnore
@@ -44,9 +42,9 @@ public class PhysEntityTrackController implements ShipForcesInducer {
     public PhysEntityTrackController() {
     }
 
-    public static PhysEntityTrackController getOrCreate(ServerShip ship) {
+    public static PhysEntityTrackController getOrCreate(LoadedServerShip ship) {
         if (ship.getAttachment(PhysEntityTrackController.class) == null) {
-            ship.saveAttachment(PhysEntityTrackController.class, new PhysEntityTrackController());
+            ship.setAttachment(PhysEntityTrackController.class, new PhysEntityTrackController());
         }
 
         return ship.getAttachment(PhysEntityTrackController.class);
@@ -54,12 +52,7 @@ public class PhysEntityTrackController implements ShipForcesInducer {
 
 
     @Override
-    public void applyForces(@NotNull PhysShip physShip) {
-        // DO NOTHING
-    }
-
-    @Override
-    public void applyForcesAndLookupPhysShips(@NotNull PhysShip physShip, @NotNull Function1<? super Long, ? extends PhysShip> lookupPhysShip) {
+    public void physTick(@NotNull PhysShip physShip, @NotNull PhysLevel physLevel) {
         while (!this.createdTrackData.isEmpty()) {
             Pair<Integer, PhysEntityTrackData.CreateData> createData = this.createdTrackData.remove();
             if (createData.getFirst() != null && createData.getSecond() != null) this.trackData.put(createData.getFirst(), PhysEntityTrackData.from(createData.getSecond()));
@@ -77,7 +70,8 @@ public class PhysEntityTrackController implements ShipForcesInducer {
         // Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
         while (!removedTracks.isEmpty()) {
             Integer removeId = this.removedTracks.remove();
-            this.trackData.remove(removeId);
+            PhysEntityTrackData track = this.trackData.remove(removeId);
+            ((VsiPhysLevel) physLevel).removeJoint(track.axleId);
         }
 
         if (this.trackData.isEmpty()) return;
@@ -86,7 +80,7 @@ public class PhysEntityTrackController implements ShipForcesInducer {
 
         double coefficientOfPower = Math.min(1.0d, 4d / this.trackData.size());
         this.trackData.forEach((id, data) -> {
-            PhysShip wheel = lookupPhysShip.invoke(data.shiptraptionID);
+            PhysShip wheel = physLevel.getShipById(data.shiptraptionID);
             Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), (PhysShipImpl)wheel, coefficientOfPower);
             if (forces != null) {
                 netLinearForce.add(forces.getFirst());
@@ -96,22 +90,22 @@ public class PhysEntityTrackController implements ShipForcesInducer {
         if (netLinearForce.isFinite()) physShip.applyInvariantForce(netLinearForce);
     }
 
-    private Pair<@NotNull Vector3dc, @NotNull Vector3dc> computeForce(PhysEntityTrackData data, PhysShipImpl ship, PhysShipImpl wheel, double coefficientOfPower) {
+    private Pair<@NotNull Vector3dc, @NotNull Vector3dc> computeForce(PhysEntityTrackData data, PhysShip ship, PhysShip wheel, double coefficientOfPower) {
         if (wheel != null) {
-            double m = ship.getInertia().getShipMass();
+            double m = ship.getMass();
             ShipTransform shipTransform = ship.getTransform();
             Vector3dc trackPos = shipTransform.getShipToWorld().transformPosition(data.trackPos, new Vector3d());
             Vector3dc springVec = wheel.getTransform().getPositionInWorld().sub(trackPos, new Vector3d());
             double springDist = Math.clamp(0.0, 1.5, 1.5 - springVec.length());
-            assert data.springConstraint != null;
-            Vector3dc springForce =  data.springConstraint.getLocalPos0().mul(m * 8.0 * springDist, new Vector3d());
+            assert data.constraint != null;
+            Vector3dc springForce =  data.constraint.getPose0().getPos().mul(m * 8.0 * springDist, new Vector3d());
             double distDelta = Math.clamp(-5, 5, (springDist - data.previousSpringDist));
             double damperForce = (distDelta / 20) * m * 3000.0;
-            springForce = springForce.add(data.springConstraint.getLocalPos0().mul(damperForce, new Vector3d()), new Vector3d());
+            springForce = springForce.add(data.constraint.getPose0().getPos().mul(damperForce, new Vector3d()), new Vector3d());
             data.previousSpringDist = springDist;
 
             Vector3dc wheelAxis = shipTransform.getShipToWorldRotation().transform(data.wheelAxis, new Vector3d());
-            double wheelSpeed = wheel.getPoseVel().getOmega().dot(wheelAxis);
+            double wheelSpeed = wheel.getKinematics().getAngularVelocity().dot(wheelAxis);
             double slip = Math.clamp(-3, 3, -data.trackRPM - wheelSpeed);
             Vector3dc driveTorque = wheelAxis.mul(-slip * m * 0.4 * coefficientOfPower, new Vector3d());
             return new Pair<>(new Vector3d(0), driveTorque);
@@ -130,10 +124,10 @@ public class PhysEntityTrackController implements ShipForcesInducer {
 
     public final void removeTrackBlock(ServerLevel level, int id) {
         PhysEntityTrackData data = this.trackData.get(id);
-        if (data != null) {
-            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.springId);
-            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.axleId);
-        }
+//        if (data != null) {
+//            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.springId);
+//            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.axleId);
+//        }
         this.removedTracks.add(id);
     }
 
