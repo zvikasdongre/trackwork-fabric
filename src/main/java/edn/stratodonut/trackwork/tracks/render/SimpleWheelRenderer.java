@@ -107,7 +107,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
             springTransform.accept(springCoil, springAngle);
             springCoil
                     .translate((springFlip ? 12/16f : 0) + horizontalOffset * -axisMult, 7/16f, axialOffset)
-                    .scale(1, (float) scaleLength / (17f/16), 1)
+                    .scale(1, (float) scaleLength / (21f/16), 1)
                     .translate(0, -7/16f, 0)
                     .uncenter();
             springCoil.light(light).renderInto(ms, buffer.getBuffer(RenderType.cutout()));
@@ -123,7 +123,7 @@ public class SimpleWheelRenderer extends KineticBlockEntityRenderer<WheelBlockEn
                     : CachedBuffers.partial(TrackworkPartialModels.SMALL_SIMPLE_WHEEL, state);
 
             wheels.center()
-                    .rotateYDegrees(-yRot + be.getSteeringValue() * 30)
+                    .rotateYDegrees(-yRot)
                     .translate(horizontalOffset * -axisMult, -wheelTravel - 0.5, -wheelTuck)
                     .rotateYDegrees(be.getSteeringValue() * 30)
                     .rotateZDegrees(-angleForBE)
