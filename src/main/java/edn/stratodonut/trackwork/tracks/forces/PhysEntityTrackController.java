@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mojang.datafixers.util.Pair;
 import edn.stratodonut.trackwork.TrackworkMod;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Vector3d;
@@ -15,6 +17,8 @@ import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
 import org.valkyrienskies.core.internal.world.VsiPhysLevel;
+import org.valkyrienskies.mod.api.ValkyrienSkies;
+import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,12 +35,21 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     public static final double RPM_TO_RADS = 0.10471975512;
     @JsonIgnore
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
+
+    @JsonIgnore
+    @Deprecated(forRemoval = true)
     public final HashMap<Integer, PhysEntityTrackData> trackData = new HashMap<>();
+
+    public final HashMap<Long, PhysEntityTrackData> trackData2 = new HashMap<>();
     @JsonIgnore
-    private final ConcurrentLinkedQueue<Pair<Integer, PhysEntityTrackData.CreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Pair<Long, PhysEntityTrackData.CreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
     @JsonIgnore
-    private final ConcurrentHashMap<Integer, PhysEntityTrackData.UpdateData> trackUpdateData = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedQueue<Integer> removedTracks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentHashMap<Long, PhysEntityTrackData.UpdateData> trackUpdateData = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<Long> removedTracks = new ConcurrentLinkedQueue<>();
+    private final HashMap<Long, Integer> posToJointId = new HashMap<>();
+
+    @JsonIgnore
+    @Deprecated(forRemoval = true)
     private int nextBearingID = 0;
 
     public PhysEntityTrackController() {
@@ -54,56 +67,40 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     @Override
     public void physTick(@NotNull PhysShip physShip, @NotNull PhysLevel physLevel) {
         while (!this.createdTrackData.isEmpty()) {
-            Pair<Integer, PhysEntityTrackData.CreateData> createData = this.createdTrackData.remove();
-            if (createData.getFirst() != null && createData.getSecond() != null) this.trackData.put(createData.getFirst(), PhysEntityTrackData.from(createData.getSecond()));
+            Pair<Long, PhysEntityTrackData.CreateData> createData = this.createdTrackData.remove();
+            if (createData.getFirst() != null && createData.getSecond() != null) this.trackData2.put(createData.getFirst(), PhysEntityTrackData.from(createData.getSecond()));
             else TrackworkMod.warn("Tried to create a PE track of ID {} with no data!", createData.getFirst());
         }
 
         this.trackUpdateData.forEach((id, data) -> {
-            PhysEntityTrackData old = this.trackData.get(id);
+            PhysEntityTrackData old = this.trackData2.get(id);
             if (old != null) {
-                this.trackData.put(id, old.updateWith(data));
+                this.trackData2.put(id, old.updateWith(data));
             }
         });
         this.trackUpdateData.clear();
 
-        // Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
+//         Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
         while (!removedTracks.isEmpty()) {
-            Integer removeId = this.removedTracks.remove();
-            PhysEntityTrackData track = this.trackData.remove(removeId);
-            ((VsiPhysLevel) physLevel).removeJoint(track.axleId);
+            Long removeId = this.removedTracks.remove();
         }
 
-        if (this.trackData.isEmpty()) return;
+        if (this.trackData2.isEmpty()) return;
 
-        Vector3d netLinearForce = new Vector3d(0);
-
-        double coefficientOfPower = Math.min(1.0d, 4d / this.trackData.size());
-        this.trackData.forEach((id, data) -> {
+        double coefficientOfPower = Math.min(1.0d, 4d / this.trackData2.size());
+        this.trackData2.forEach((id, data) -> {
             PhysShip wheel = physLevel.getShipById(data.shiptraptionID);
             Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), (PhysShipImpl)wheel, coefficientOfPower);
             if (forces != null) {
-                netLinearForce.add(forces.getFirst());
-                if (forces.getSecond().isFinite()) wheel.applyInvariantTorque(forces.getSecond());
+                if (forces.getSecond().isFinite()) wheel.applyWorldTorque(forces.getSecond());
             }
         });
-        if (netLinearForce.isFinite()) physShip.applyInvariantForce(netLinearForce);
     }
 
     private Pair<@NotNull Vector3dc, @NotNull Vector3dc> computeForce(PhysEntityTrackData data, PhysShip ship, PhysShip wheel, double coefficientOfPower) {
         if (wheel != null) {
             double m = ship.getMass();
             ShipTransform shipTransform = ship.getTransform();
-            Vector3dc trackPos = shipTransform.getShipToWorld().transformPosition(data.trackPos, new Vector3d());
-            Vector3dc springVec = wheel.getTransform().getPositionInWorld().sub(trackPos, new Vector3d());
-            double springDist = Math.clamp(0.0, 1.5, 1.5 - springVec.length());
-            assert data.constraint != null;
-            Vector3dc springForce =  data.constraint.getPose0().getPos().mul(m * 8.0 * springDist, new Vector3d());
-            double distDelta = Math.clamp(-5, 5, (springDist - data.previousSpringDist));
-            double damperForce = (distDelta / 20) * m * 3000.0;
-            springForce = springForce.add(data.constraint.getPose0().getPos().mul(damperForce, new Vector3d()), new Vector3d());
-            data.previousSpringDist = springDist;
-
             Vector3dc wheelAxis = shipTransform.getShipToWorldRotation().transform(data.wheelAxis, new Vector3d());
             double wheelSpeed = wheel.getKinematics().getAngularVelocity().dot(wheelAxis);
             double slip = Math.clamp(-3, 3, -data.trackRPM - wheelSpeed);
@@ -113,29 +110,29 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
         return null;
     }
 
-    public final int addTrackBlock(PhysEntityTrackData.CreateData data) {
-        this.createdTrackData.add(new Pair<>(++nextBearingID, data));
-        return this.nextBearingID;
+    public void addTrackBlock(BlockPos pos, PhysEntityTrackData.CreateData data, int axleId) {
+        this.createdTrackData.add(new Pair<>(pos.asLong(), data));
+        posToJointId.put(pos.asLong(), axleId);
     }
 
-    public final void updateTrackBlock(Integer id, PhysEntityTrackData.UpdateData data) {
-        this.trackUpdateData.put(id, data);
+    public void updateTrackBlock(BlockPos pos, PhysEntityTrackData.UpdateData data) {
+        this.trackUpdateData.put(pos.asLong(), data);
     }
 
-    public final void removeTrackBlock(ServerLevel level, int id) {
-        PhysEntityTrackData data = this.trackData.get(id);
-//        if (data != null) {
-//            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.springId);
-//            VSGameUtilsKt.getShipObjectWorld(level).removeConstraint(data.axleId);
-//        }
-        this.removedTracks.add(id);
+    public void removeTrackBlock(ServerLevel level, BlockPos pos) {
+        this.removedTracks.add(pos.asLong());
+        posToJointId.computeIfPresent(
+                pos.asLong(),
+                (k, id) -> {
+                    ValkyrienSkiesMod.getOrCreateGTPA(ValkyrienSkies.getDimensionId(level)).removeJoint(id);
+                    return null;
+                }
+        );
     }
 
-    public final void resetController() {
-        for (int i = 0; i < nextBearingID ; i++) {
-            this.removedTracks.add(i);
-        }
-        this.nextBearingID = 0;
+    @Deprecated
+    public void resetController() {
+        // Do nothing
     }
 
     public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
@@ -148,11 +145,10 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
         } else if (!(other instanceof PhysEntityTrackController otherController)) {
             return false;
         } else {
-            return Objects.equals(this.trackData, otherController.trackData) &&
+            return Objects.equals(this.trackData2, otherController.trackData2) &&
                     Objects.equals(this.trackUpdateData, otherController.trackUpdateData) &&
                     areQueuesEqual(this.createdTrackData, otherController.createdTrackData) &&
-                    areQueuesEqual(this.removedTracks, otherController.removedTracks) &&
-                    this.nextBearingID == otherController.nextBearingID;
+                    areQueuesEqual(this.removedTracks, otherController.removedTracks);
         }
     }
 }

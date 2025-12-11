@@ -1,5 +1,7 @@
 package edn.stratodonut.trackwork.wheel;
 
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Pose;
@@ -10,9 +12,10 @@ import org.joml.Vector3d;
 import org.valkyrienskies.core.api.ships.properties.ShipInertiaData;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.internal.physics.PhysicsEntityData;
-import org.valkyrienskies.core.internal.physics.VSWheelCollisionShapeData;
-import org.valkyrienskies.core.impl.game.ships.ShipInertiaDataImpl;
+import org.valkyrienskies.core.internal.physics.VSSphereCollisionShapeData;
 import org.valkyrienskies.mod.common.entity.VSPhysicsEntity;
+
+import static org.valkyrienskies.mod.common.ValkyrienSkiesMod.getVsCore;
 
 public class WheelEntity extends VSPhysicsEntity {
 
@@ -40,8 +43,24 @@ public class WheelEntity extends VSPhysicsEntity {
         timeout++;
 
         if (timeout > 60) {
-            this.kill();
+            this.remove(RemovalReason.DISCARDED);
         }
+    }
+
+    @Override
+    public boolean hurt(DamageSource p_21016_, float p_21017_) {
+        if (p_21016_ != this.damageSources().genericKill()) return false;
+        return super.hurt(p_21016_, p_21017_);
+    }
+
+    @Override
+    public void push(Entity p_21294_) {
+        // DO NOTHING
+    }
+
+    @Override
+    public void die(DamageSource p_21014_) {
+        // DO NOTHING
     }
 
     public long getShipId() {
@@ -60,8 +79,10 @@ public class WheelEntity extends VSPhysicsEntity {
         @NotNull
         public static PhysicsEntityData createBasicData(long shipId, @NotNull ShipTransform transform, double radius, double mass) {
             double inertia = 0.4 * mass * radius * radius;
-            ShipInertiaData inertiaData = new ShipInertiaDataImpl(new Vector3d(), mass * radius, new Matrix3d().scale(inertia));
-            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(11 * radius));
+            ShipInertiaData inertiaData = getVsCore().newShipInertiaData(new Vector3d(), mass * radius, new Matrix3d().scale(inertia));
+            VSSphereCollisionShapeData collisionShapeData = new VSSphereCollisionShapeData(radius);
+            // TODO: Current crashes physics, reimplement when safe
+//            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(11 * radius));
             return new PhysicsEntityData(
                     shipId,
                     transform,
