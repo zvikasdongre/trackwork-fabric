@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 
 import static com.simibubi.create.content.kinetics.base.HorizontalKineticBlock.HORIZONTAL_FACING;
 import static edn.stratodonut.trackwork.TrackSounds.SUSPENSION_CREAK;
+import static edn.stratodonut.trackwork.TrackworkUtil.accumulatedVelocity;
 import static edn.stratodonut.trackwork.tracks.forces.SimpleWheelController.UP;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
@@ -167,7 +168,7 @@ public class WheelBlockEntity extends KineticBlockEntity {
                         return;
                     TrackSoundScapes.play(TrackAmbientGroups.WHEEL_GROUND_AMBIENT, worldPosition, pitch);
 
-                    Vector3dc shipSpeed = SimpleWheelController.accumulatedVelocity(s.getTransform(),
+                    Vector3dc shipSpeed = accumulatedVelocity(s.getTransform(),
                             new BodyKinematicsImpl(
                                     s.getVelocity(),
                                     s.getAngularVelocity(),

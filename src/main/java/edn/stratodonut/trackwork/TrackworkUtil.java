@@ -4,8 +4,17 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Math;
 import org.joml.Vector3d;
+import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.bodies.properties.BodyKinematics;
+import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 
 public class TrackworkUtil {
+    public static final Vector3dc ZERO = new Vector3d();
+
+    public static Vector3dc accumulatedVelocity(ShipTransform t, BodyKinematics pose, Vector3dc worldPosition) {
+        return pose.getVelocity().add(pose.getAngularVelocity().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
+    }
+
     public static double roundTowardZero(double val) {
         if (val < 0) {
             return Math.ceil(val);

@@ -20,7 +20,6 @@ import org.valkyrienskies.core.api.ships.*;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
-import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +28,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static edn.stratodonut.trackwork.TrackworkUtil.accumulatedVelocity;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
@@ -54,6 +54,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     @JsonIgnore
     private final ConcurrentHashMap<Long, SimpleWheelData.SimpleWheelUpdateData> trackUpdateData = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Long> removedTracks = new ConcurrentLinkedQueue<>();
+    @Deprecated
     private int nextBearingID = 0;
 
     private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
@@ -218,10 +219,6 @@ public final class SimpleWheelController implements ShipPhysicsListener {
                 .rotateAxis(steeringValue * Math.toRadians(30), 0, 1, 0);
     }
 
-    public static Vector3dc accumulatedVelocity(ShipTransform t, BodyKinematics pose, Vector3dc worldPosition) {
-        return pose.getVelocity().add(pose.getAngularVelocity().cross(worldPosition.sub(t.getPositionInWorld(), new Vector3d()), new Vector3d()), new Vector3d());
-    }
-
     public final void addTrackBlock(BlockPos pos, SimpleWheelData.SimpleWheelCreateData data) {
         this.createdTrackData.add(new Pair<>(pos.asLong(), data));
     }
@@ -260,9 +257,11 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
     // TODO: Terrain dynamics
     // Ground pressure?
-    private WheelBlockEntity.@NotNull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Direction.Axis axis, Vec3 start, Vec3 dir, float steeringValue, double wheelRadius) {
+    private WheelBlockEntity.@NotNull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship,
+                                                                    Direction.Axis axis, Vec3 start, Vec3 dir,
+                                                                    float steeringValue, double wheelRadius) {
         //BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        RayCastResult bResult = physLevel.rayCast(VectorConversionsMCKt.toJOML(start), VectorConversionsMCKt.toJOML(dir), wheelRadius + 1.0);
+        RayCastResult bResult = physLevel.rayCast(toJOML(start), toJOML(dir), wheelRadius + 1.0);
 
         if (bResult == null) {
             //System.out.println("Wheel raycast returned null, ignoring.");
@@ -303,7 +302,10 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         } else if (!(other instanceof SimpleWheelController otherController)) {
             return false;
         } else {
-            return Objects.equals(this.trackData, otherController.trackData) && Objects.equals(this.trackUpdateData, otherController.trackUpdateData) && areQueuesEqual(this.createdTrackData, otherController.createdTrackData) && areQueuesEqual(this.removedTracks, otherController.removedTracks) && this.nextBearingID == otherController.nextBearingID;
+            return Objects.equals(this.trackData, otherController.trackData) &&
+                    Objects.equals(this.trackUpdateData, otherController.trackUpdateData) &&
+                    areQueuesEqual(this.createdTrackData, otherController.createdTrackData) &&
+                    areQueuesEqual(this.removedTracks, otherController.removedTracks);
         }
     }
 }

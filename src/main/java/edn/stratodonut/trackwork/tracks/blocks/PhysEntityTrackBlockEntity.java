@@ -195,6 +195,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                         new Vector3d(0.5, 0.5, 0.5),
                         new Quaterniond()),
                 new VSJointMaxForceTorque((float) attachMaxForce, (float) hingeMaxForce),
+                attachCompliance,
                 null,
                 null,
                 null,
