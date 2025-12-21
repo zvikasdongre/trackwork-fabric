@@ -130,10 +130,10 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         );
 
         Vector3dc trackTangentForce;
-        SuspensionTrackBlockEntity.ClipResult clipResult = clipAndResolvePhys(
-                physLevel, ship, axis,
-                worldSpaceStart.add(worldSpaceHorizontalOffset), worldSpaceNormal,
-                data.wheelRadius);
+        TrackworkUtil.ClipResult clipResult = TrackworkUtil.clipAndResolvePhys(
+                physLevel, ship, TrackworkUtil.getAxisAsVec(axis),
+                toJOML(worldSpaceStart.add(worldSpaceHorizontalOffset)), toJOML(worldSpaceNormal),
+                data.wheelRadius, 1);
                 // Apply forces at the center of the block to reduce pitching moment from acceleration
         Vector3dc trackContactPosition = toJOML(worldSpaceStart);
         trackTangentForce = clipResult.trackTangent().mul(data.wheelRadius / 0.5, new Vector3d());
@@ -142,7 +142,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
                     TrackworkUtil.getForwardVec3d(axis, 1)).mul(data.wheelRadius / 0.5).mul(0.2);
         }
 
-        double suspensionTravel = clipResult.suspensionLength().lengthSqr() == 0 ? suspensionRestPosition : clipResult.suspensionLength().length() - 0.5;
+        double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? suspensionRestPosition : clipResult.suspensionLength().length() - 0.5;
         Vector3dc suspensionForce = toJOML(worldSpaceNormal.scale( (suspensionRestPosition - suspensionTravel))).negate();
 
         double suspensionCompressionDelta = suspensionForce.sub(data.lastSuspensionForce, new Vector3d()).length();
@@ -158,12 +158,10 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         Vector3dc trackSurface = trackTangentForce.mul(data.trackRPM * RPM_TO_RADS * 0.5, new Vector3d());
         Vector3dc velocityAtPosition = accumulatedVelocity(shipTransform, pose, trackContactPosition);
 
-        boolean istrackGrounded = !clipResult.equals(SuspensionTrackBlockEntity.ClipResult.MISS);
+        boolean istrackGrounded = !clipResult.equals(TrackworkUtil.ClipResult.MISS);
 
-        if (istrackGrounded && clipResult.groundShipId() != null) {
-            PhysShip ground = physLevel.getShipById(clipResult.groundShipId());
-            Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getKinematics(), trackContactPosition);
-            velocityAtPosition = velocityAtPosition.sub(groundShipVelocity, new Vector3d());
+        if (istrackGrounded) {
+            velocityAtPosition = velocityAtPosition.sub(clipResult.groundVelocity(), new Vector3d());
         }
 
         // Suspension
@@ -199,37 +197,6 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         Vector3dc trackRelPos = shipTransform.getShipToWorldRotation().transform(trackRelPosShip, new Vector3d());
         Vector3dc torque = trackRelPos.cross(tForce, new Vector3d());
         return new Pair<>(tForce, torque);
-    }
-
-    // TODO: Terrain dynamics
-    // Ground pressure?
-    private @NotNull SuspensionTrackBlockEntity.ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship,
-                                                                    Direction.Axis axis, Vec3 start, Vec3 dir,
-                                                                    double wheelRadius) {
-        RayCastResult bResult = physLevel.rayCast(toJOML(start), toJOML(dir), wheelRadius + 1.0);
-
-        if (bResult == null) {
-            return SuspensionTrackBlockEntity.ClipResult.MISS;
-        }
-        PhysShip hitShip = bResult.getHitBody();
-        long hitShipId = hitShip.getId();
-        if (hitShip != null) {
-            if (hitShipId == ship.getId()) {
-                return SuspensionTrackBlockEntity.ClipResult.MISS;
-            }
-            hitShipId = hitShip.getId();
-        }
-
-        Vec3 worldSpacehitExact = start.add(dir.normalize().scale(bResult.getDistance()));
-        Vec3 forceNormal = start.subtract(worldSpacehitExact);
-        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(
-                TrackworkUtil.getAxisAsVec(axis))
-        );
-        return new SuspensionTrackBlockEntity.ClipResult(
-                toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
-                forceNormal,
-                hitShipId
-        );
     }
 
     public int addTrackBlock(PhysTrackData.PhysTrackCreateData data) {

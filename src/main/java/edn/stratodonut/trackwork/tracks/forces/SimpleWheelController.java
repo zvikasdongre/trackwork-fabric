@@ -43,6 +43,8 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     @JsonIgnore
     public static final double MAXIMUM_SLIP_LATERAL = MAXIMUM_SLIP * 1.5;
     @JsonIgnore
+    public static final double MAX_FREESPIN_SLIP = 0.07;
+    @JsonIgnore
     public static final double MAXIMUM_G = 98.1*5;
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
     private final HashMap<Long, SimpleWheelData> trackData = new HashMap<>();
@@ -133,23 +135,21 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
         Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
 
-        Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1, steeringValue), new Vector3d());
-        Vec3 worldSpaceFutureOffset = toMinecraft(
-                worldSpaceForward.normalize(Math.clamp(-0.4 - horizontalOffset, 0.4 - horizontalOffset, 0.05 * ship.getVelocity().dot(worldSpaceForward)), new Vector3d())
-        );
-
         Vec3 worldSpaceOffset = toMinecraft(
                 ship.getTransform().getShipToWorldRotation().transform(
                         TrackworkUtil.getForwardVec3d(axis, 1).mul(horizontalOffset)
                                 .add(TrackworkUtil.getAxisAsVec(axis).mul(axialOffset)), new Vector3d()));
 
         Vector3dc forceVec;
-        WheelBlockEntity.ClipResult clipResult = clipAndResolvePhys(physLevel, ship, axis, worldSpaceStart.add(worldSpaceOffset).add(worldSpaceFutureOffset), worldSpaceNormal, steeringValue, steeringInfo.wheelRadius());
+        TrackworkUtil.ClipResult clipResult = TrackworkUtil.clipAndResolvePhys(physLevel, ship,
+                TrackworkUtil.getAxisAsVec(axis).rotateAxis(steeringValue * Math.toRadians(30), 0, 1, 0),
+                toJOML(worldSpaceStart.add(worldSpaceOffset)), toJOML(worldSpaceNormal),
+                steeringInfo.wheelRadius(), 2);
         forceVec = clipResult.trackTangent().mul(steeringInfo.wheelRadius() / 0.5, new Vector3d());
 
-        double suspensionTravel = clipResult.suspensionLength().lengthSqr() == 0 ? susScaled : clipResult.suspensionLength().length() - 0.5;
+        double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? susScaled : clipResult.suspensionLength().length() - 0.5;
         Vector3dc suspensionForce = toJOML(worldSpaceNormal.scale( (susScaled - suspensionTravel))).negate();
-        boolean isOnGround = clipResult.suspensionLength().lengthSqr() != 0;
+        boolean isOnGround = !clipResult.equals(TrackworkUtil.ClipResult.MISS);
 
         Vector3dc wheelContactPosition = toJOML(worldSpaceStart.add(worldSpaceOffset));
         Vector3dc wheelNormal = toJOML(worldSpaceNormal);
@@ -160,10 +160,8 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         Vector3dc trackNormal = wheelNormal.normalize(new Vector3d());
         Vector3dc trackSurface = forceVec.mul(data.wheelRPM * RPM_TO_RADS * 0.5, new Vector3d());
         Vector3dc velocityAtPosition = accumulatedVelocity(shipTransform, pose, wheelContactPosition);
-        if (isOnGround && clipResult.groundShipId() != null) {
-            PhysShipImpl ground = (PhysShipImpl) physLevel.getShipById(clipResult.groundShipId());
-            Vector3dc groundShipVelocity = accumulatedVelocity(ground.getTransform(), ground.getKinematics(), wheelContactPosition);
-            velocityAtPosition = velocityAtPosition.sub(groundShipVelocity, new Vector3d());
+        if (isOnGround) {
+            velocityAtPosition = velocityAtPosition.sub(clipResult.groundVelocity(), new Vector3d());
         }
 
         // Suspension
@@ -197,7 +195,8 @@ public final class SimpleWheelController implements ShipPhysicsListener {
             // TODO: A better Tyre model like Pacoianowfa 98?
             if (isOnGround) {
                 if (data.isFreespin) {
-                    slipVelocity = lateralSlip.normalize(Math.min(lateralSlip.length(), MAXIMUM_SLIP_LATERAL), new Vector3d());
+                    slipVelocity = driveSlip.normalize(Math.min(driveSlip.length(), MAX_FREESPIN_SLIP), new Vector3d())
+                            .add(lateralSlip.normalize(Math.min(lateralSlip.length(), MAXIMUM_SLIP_LATERAL), new Vector3d()));
                 } else {
                     slipVelocity = driveSlip.normalize(Math.min(driveSlip.length(), MAXIMUM_SLIP), new Vector3d())
                             .add(lateralSlip.normalize(Math.min(lateralSlip.length(), MAXIMUM_SLIP_LATERAL), new Vector3d()), new Vector3d());
@@ -253,43 +252,6 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
     private double tilt(Vector3dc relPos) {
         return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
-    }
-
-    // TODO: Terrain dynamics
-    // Ground pressure?
-    private WheelBlockEntity.@NotNull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship,
-                                                                    Direction.Axis axis, Vec3 start, Vec3 dir,
-                                                                    float steeringValue, double wheelRadius) {
-        //BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        RayCastResult bResult = physLevel.rayCast(toJOML(start), toJOML(dir), wheelRadius + 1.0);
-
-        if (bResult == null) {
-            //System.out.println("Wheel raycast returned null, ignoring.");
-            return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
-        }
-        if (bResult.getDistance() < 0) {
-            // TODO: what to do if the wheel is inside?
-        }
-        PhysShip hitShip = bResult.getHitBody();
-        long hitShipId = hitShip.getId();
-        if (hitShip != null) {
-            if (hitShipId == ship.getId()) {
-                //System.out.println("Wheel raycast hit own ship, ignoring.");
-                return new WheelBlockEntity.ClipResult(new Vector3d(0), Vec3.ZERO, null);
-            }
-            hitShipId = hitShip.getId();
-        }
-
-        Vec3 worldSpacehitExact = start.add(dir.normalize().scale(bResult.getDistance()));
-        Vec3 forceNormal = start.subtract(worldSpacehitExact);
-        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(
-                TrackworkUtil.getAxisAsVec(axis).rotateAxis(steeringValue * Math.toRadians(30), 0, 1, 0)
-        ));
-        return new WheelBlockEntity.ClipResult(
-                toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
-                forceNormal,
-                hitShipId
-        );
     }
 
     public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
