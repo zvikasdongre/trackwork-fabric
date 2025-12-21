@@ -46,19 +46,24 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
 
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
 
+    @Deprecated
+    // For Backwards compatibility
     private final HashMap<Integer, PhysTrackData> trackData = new HashMap<>();
+    private final HashMap<Long, PhysTrackData> trackData2 = new HashMap<>();
+    @JsonIgnore
     private final HashMap<Long, TrackworkUtil.ClipResult> suspensionData = new HashMap<>();
 
     @JsonIgnore
-    private final ConcurrentLinkedQueue<Pair<Integer, PhysTrackData.PhysTrackCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Pair<Long, PhysTrackData.PhysTrackCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
     @JsonIgnore
-    private final ConcurrentHashMap<Integer, PhysTrackData.PhysTrackUpdateData> trackUpdateData = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedQueue<Integer> removedTracks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentHashMap<Long, PhysTrackData.PhysTrackUpdateData> trackUpdateData = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<Long> removedTracks = new ConcurrentLinkedQueue<>();
     private int nextBearingID = 0;
 
     private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
     private volatile float suspensionStiffness = 1.0f;
     @JsonIgnore
+    @Deprecated(forRemoval = true)
     private volatile float suspensionDampening = 1.2f;
 
     public PhysicsTrackController () {}
@@ -70,30 +75,39 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         return ship.getAttachment(PhysicsTrackController.class);
     }
 
+    @JsonIgnore
+    @Deprecated(forRemoval = true)
     private float debugTick = 0;
 
     @Override
     public void physTick(@NotNull PhysShip physShip, @NotNull PhysLevel physLevel) {
+        if (!this.trackData.isEmpty()) {
+            this.trackData.forEach((id, data) ->
+                    this.trackData2.put(data.blockPos, data)
+            );
+            this.trackData.clear();
+        }
+
         while(!this.createdTrackData.isEmpty()) {
-            Pair<Integer, PhysTrackData.PhysTrackCreateData> createData = this.createdTrackData.remove();
-            this.trackData.put(createData.getFirst(), PhysTrackData.from(createData.getSecond()));
+            Pair<Long, PhysTrackData.PhysTrackCreateData> createData = this.createdTrackData.remove();
+            this.trackData2.put(createData.getFirst(), PhysTrackData.from(createData.getSecond()));
         }
 
         this.trackUpdateData.forEach((id, data) -> {
-            PhysTrackData old = this.trackData.get(id);
+            PhysTrackData old = this.trackData2.get(id);
             if (old != null) {
-                this.trackData.put(id, old.updateWith(data));
+                this.trackData2.put(id, old.updateWith(data));
             }
         });
         this.trackUpdateData.clear();
 
         // Sometimes removing a block sends an update in the same tick
         while(!removedTracks.isEmpty()) {
-            Integer removeId = this.removedTracks.remove();
-            this.trackData.remove(removeId);
+            Long removeId = this.removedTracks.remove();
+            if (removeId != null) this.trackData2.remove(removeId);
         }
 
-        if (this.trackData.isEmpty()) return;
+        if (this.trackData2.isEmpty()) return;
 
         Vector3d netLinearForce = new Vector3d(0);
         Vector3d netTorque = new Vector3d(0);
@@ -203,17 +217,16 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         return new ComputeResult(tForce, torque, clipResult);
     }
 
-    public int addTrackBlock(PhysTrackData.PhysTrackCreateData data) {
-        this.createdTrackData.add(new Pair<>(++nextBearingID, data));
-        return this.nextBearingID;
+    public void addTrackBlock(PhysTrackData.PhysTrackCreateData data) {
+        this.createdTrackData.add(new Pair<>(data.blockPos().asLong(), data));
     }
 
-    public double updateTrackBlock(Integer id, PhysTrackData.PhysTrackUpdateData data) {
-        this.trackUpdateData.put(id, data);
+    public double updateTrackBlock(BlockPos pos, PhysTrackData.PhysTrackUpdateData data) {
+        this.trackUpdateData.put(pos.asLong(), data);
         return Math.round(this.suspensionAdjust.y()*16) / 16. * ((9+1/(this.suspensionStiffness*2 - 1))/10);
     }
 
-    public void removeTrackBlock(int id) {
+    public void removeTrackBlock(long id) {
         this.removedTracks.add(id);
     }
 
@@ -259,7 +272,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         } else if (!(other instanceof PhysicsTrackController otherController)) {
             return false;
         } else {
-            return Objects.equals(this.trackData, otherController.trackData) &&
+            return Objects.equals(this.trackData2, otherController.trackData2) &&
                     Objects.equals(this.trackUpdateData, otherController.trackUpdateData) &&
                     areQueuesEqual(this.createdTrackData, otherController.createdTrackData) &&
                     areQueuesEqual(this.removedTracks, otherController.removedTracks) &&
