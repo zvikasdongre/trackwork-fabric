@@ -83,6 +83,7 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
 //         Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
         while (!removedTracks.isEmpty()) {
             Long removeId = this.removedTracks.remove();
+            this.trackData2.remove(removeId);
         }
 
         if (this.trackData2.isEmpty()) return;
