@@ -57,6 +57,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     protected final Random random = new Random();
     @NotNull
     protected final Supplier<Ship> ship;
+    @Deprecated
     private Integer trackID;
     public boolean assembled;
     public boolean assembleNextTick = true;
@@ -102,7 +103,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
-                controller.removeTrackBlock(this.trackID);
+                controller.removeTrackBlock(this.getBlockPos().asLong());
             }
         }
     }
@@ -115,10 +116,8 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                 this.assembled = true;
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
                 PhysTrackData.PhysTrackCreateData data = new PhysTrackData.PhysTrackCreateData(this.getBlockPos());
-                this.trackID = controller.addTrackBlock(data);
+                controller.addTrackBlock(data);
                 this.sendData();
-                if (this.trackID != null) {
-                }
             }
         }
     }
@@ -192,17 +191,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
             double effectiveSuspensionTravel = this.maxSuspensionTravel * this.suspensionScale;
             LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
-                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(effectiveSuspensionTravel + 0.5));
                 Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
-                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getForwardVec3d(axis, 1), new Vector3d());
-                Vec3 worldSpaceFutureOffset = toMinecraft(
-                        worldSpaceForward.mul(0.1 * ship.getVelocity().dot(worldSpaceForward), new Vector3d())
-                );
-                Vec3 worldSpaceHorizontalOffset = toMinecraft(
-                        worldSpaceForward.mul(this.getPointHorizontalOffset(), new Vector3d())
-                );
-
-                ClipResult clipResult = clipAndResolve(ship, axis, worldSpaceStart.add(worldSpaceFutureOffset).add(worldSpaceHorizontalOffset), worldSpaceNormal);
 
                 boolean inWater = false;
                 BlockState b = this.level.getBlockState(BlockPos.containing(worldSpaceStart));
@@ -210,10 +199,7 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                     inWater = true;
                 }
 
-                double suspensionTravel = clipResult.suspensionLength.lengthSqr() == 0 ? effectiveSuspensionTravel : clipResult.suspensionLength.length() - 0.5;
-
                 PhysicsTrackController controller = PhysicsTrackController.getOrCreate(ship);
-                if (this.trackID == null) {return;}
                 PhysTrackData.PhysTrackUpdateData data = new PhysTrackData.PhysTrackUpdateData(
                         axis,
                         horizontalOffset,
@@ -222,7 +208,11 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
                         inWater,
                         trackRPM
                 );
-                this.suspensionScale = controller.updateTrackBlock(this.trackID, data);
+
+                TrackworkUtil.ClipResult clipResult = controller.getSuspensionData(this.getBlockPos());
+                double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? effectiveSuspensionTravel : clipResult.suspensionLength().length() - 0.5;
+
+                this.suspensionScale = controller.updateTrackBlock(this.getBlockPos(), data);
                 this.prevWheelTravel = this.wheelTravel;
                 float newWheelTravel = (float) (suspensionTravel + restOffset);
                 float wheelTravelDelta = newWheelTravel - this.wheelTravel;
@@ -259,32 +249,6 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void lazyTick() {
         super.lazyTick();
         if (this.assembled && !this.level.isClientSide && this.ship.get() != null) TrackPackets.getChannel().send(packetTarget(), new SuspensionWheelPacket(this.getBlockPos(), this.wheelTravel));
-    }
-
-    public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) {
-        public static final ClipResult MISS = new ClipResult(new Vector3d(), Vec3.ZERO, null);
-    }
-
-    private @NotNull ClipResult clipAndResolve(ServerShip ship, Direction.Axis axis, Vec3 start, Vec3 dir) {
-        BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        if (bResult.getType() != HitResult.Type.BLOCK) {
-            return new ClipResult(new Vector3d(0), Vec3.ZERO, null);
-        }
-        Ship hitShip = VSGameUtilsKt.getShipObjectManagingPos(this.level, bResult.getBlockPos());
-        Long hitShipId = null;
-        if (hitShip != null) {
-             if (hitShip.equals(ship)) return new ClipResult(new Vector3d(0), Vec3.ZERO, null);
-            hitShipId = hitShip.getId();
-        }
-
-        Vec3 worldSpacehitExact = bResult.getLocation();
-        Vec3 forceNormal = start.subtract(worldSpacehitExact);
-        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(TrackworkUtil.getAxisAsVec(axis)));
-        return new ClipResult(
-                toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
-                forceNormal,
-                hitShipId
-        );
     }
 
     public void setHorizontalOffset(Vector3dc offset) {

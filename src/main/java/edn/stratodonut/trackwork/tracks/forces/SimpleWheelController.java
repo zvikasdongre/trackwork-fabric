@@ -50,13 +50,15 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     private final HashMap<Long, SimpleWheelData> trackData = new HashMap<>();
     // steering (float) and axis (direction)
     private final HashMap<Long, SimpleWheelData.ExtraWheelData> steeringData = new HashMap<>();
+    @JsonIgnore
+    private final HashMap<Long, TrackworkUtil.ClipResult> suspensionData = new HashMap<>();
 
     @JsonIgnore
     private final ConcurrentLinkedQueue<Pair<Long, SimpleWheelData.SimpleWheelCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
     @JsonIgnore
     private final ConcurrentHashMap<Long, SimpleWheelData.SimpleWheelUpdateData> trackUpdateData = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Long> removedTracks = new ConcurrentLinkedQueue<>();
-    @Deprecated
+    @Deprecated(forRemoval = true)
     private int nextBearingID = 0;
 
     private volatile Vector3dc suspensionAdjust = new Vector3d(0, 1, 0);
@@ -104,10 +106,12 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
         double coefficientOfPower = Math.min(2.0d, 3d / this.trackData.size());
         this.trackData.forEach((id, data) -> {
-            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), coefficientOfPower, physLevel, this.steeringData.getOrDefault(id, SimpleWheelData.ExtraWheelData.empty()));
-            if (forces.getFirst().isFinite()) {
-                netLinearForce.add(forces.getFirst());
-                netTorque.add(forces.getSecond());
+            ComputeResult computeResult = this.computeForce(data, ((PhysShipImpl) physShip), coefficientOfPower, physLevel, this.steeringData.getOrDefault(id, SimpleWheelData.ExtraWheelData.empty()));
+            suspensionData.put(id, computeResult.clipResult);
+
+            if (computeResult.linearForce.isFinite()) {
+                netLinearForce.add(computeResult.linearForce);
+                netTorque.add(computeResult.torque);
             }
         });
 
@@ -117,7 +121,9 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         }
     }
 
-    private Pair<Vector3dc, Vector3dc> computeForce(SimpleWheelData data, PhysShipImpl ship, double coefficientOfPower, PhysLevel physLevel, SimpleWheelData.ExtraWheelData steeringInfo) {
+    private record ComputeResult(Vector3dc linearForce, Vector3dc torque, TrackworkUtil.ClipResult clipResult) {}
+
+    private ComputeResult computeForce(SimpleWheelData data, PhysShipImpl ship, double coefficientOfPower, PhysLevel physLevel, SimpleWheelData.ExtraWheelData steeringInfo) {
         Direction.Axis axis = steeringInfo.wheelAxis();
         float steeringValue = steeringInfo.steeringValue();
         float axialOffset = steeringInfo.axialOffset();
@@ -130,7 +136,6 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         Vector3dc localUp = shipTransform.getShipToWorldRotation().transform(UP, new Vector3d());
         double gravity_factor = Math.max(0.3, localUp.dot(UP));
         Vec3 start = toMinecraft(data.wheelOriginPosition);
-
 
         Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
         Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
@@ -210,7 +215,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
         Vector3dc trackRelPos = shipTransform.getShipToWorldRotation().transform(trackRelPosShip, new Vector3d());//worldSpaceTrackOrigin.sub(shipTransform.getPositionInWorld(), new Vector3d());
         Vector3dc torque = trackRelPos.cross(tForce, new Vector3d());
-        return new Pair<>(tForce, torque);
+        return new ComputeResult(tForce, torque, clipResult);
     }
 
     public Vector3d getActionVec3d(Direction.Axis axis, float length, float steeringValue) {
@@ -252,6 +257,10 @@ public final class SimpleWheelController implements ShipPhysicsListener {
 
     private double tilt(Vector3dc relPos) {
         return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
+    }
+
+    public TrackworkUtil.ClipResult getSuspensionData(BlockPos pos) {
+        return suspensionData.get(pos.asLong());
     }
 
     public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {

@@ -203,9 +203,6 @@ public class WheelBlockEntity extends KineticBlockEntity {
             double susScaled = this.suspensionTravel * this.suspensionScale;
             LoadedServerShip ship = (LoadedServerShip)this.ship.get();
             if (ship != null) {
-                Vec3 worldSpaceNormal = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(toJOML(TrackworkUtil.getActionNormal(axis)), new Vector3d()).mul(susScaled + 0.5));
-                Vec3 worldSpaceStart = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(start.add(0, -restOffset, 0))));
-
 //                 Steering Control
                 int bestSignal = this.level.getBestNeighborSignal(this.getBlockPos());
                 float targetSteeringValue = bestSignal / 15f * ((dir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : -1));
@@ -217,34 +214,6 @@ public class WheelBlockEntity extends KineticBlockEntity {
 
                 float deltaSteeringValue = oldSteeringValue - this.steeringValue;
                 this.onLinkedWheel(wbe -> wbe.setLinkedSteeringValue(this.steeringValue));
-
-                Vector3dc worldSpaceForward = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1), new Vector3d());
-                float horizontalOffset = this.getPointHorizontalOffset();
-                float axialOffset = this.getPointAxialOffset();
-                Vec3 worldSpaceFutureOffset = toMinecraft(
-                        worldSpaceForward.normalize(Math.clamp(-0.4 - horizontalOffset, 0.4 - horizontalOffset, 0.05 * ship.getVelocity().dot(worldSpaceForward)), new Vector3d())
-                );
-
-                Vec3 worldSpaceOffset = toMinecraft(
-                        ship.getTransform().getShipToWorldRotation().transform(
-                                TrackworkUtil.getForwardVec3d(axis, 1).mul(horizontalOffset)
-                                        .add(TrackworkUtil.getAxisAsVec(axis).mul(axialOffset)), new Vector3d()));
-
-                Vector3dc forceVec;
-                ClipResult clipResult = clipAndResolve(ship, axis, worldSpaceStart.add(worldSpaceOffset).add(worldSpaceFutureOffset), worldSpaceNormal);
-
-                forceVec = clipResult.trackTangent.mul(this.wheelRadius / 0.5, new Vector3d());
-//                if (forceVec.lengthSquared() == 0) {
-//                    BlockState b = this.level.getBlockState(BlockPos.containing(worldSpaceStart));
-//                    if (b.getFluidState().is(FluidTags.WATER)) {
-//                        forceVec = ship.getTransform().getShipToWorldRotation().transform(getActionVec3d(axis, 1)).mul(this.wheelRadius / 0.5).mul(0.2);
-//                    }
-//                }
-
-                double suspensionTravel = clipResult.suspensionLength.lengthSqr() == 0 ? susScaled : clipResult.suspensionLength.length() - 0.5;
-                Vector3dc suspensionForce = toJOML(worldSpaceNormal.scale( (susScaled - suspensionTravel))).negate();
-                boolean isOnGround = clipResult.suspensionLength.lengthSqr() != 0;
-
                 SimpleWheelController controller = SimpleWheelController.getOrCreate(ship);
                 SimpleWheelData.SimpleWheelUpdateData data = new SimpleWheelData.SimpleWheelUpdateData(
                         this.getSteeringValue(),
@@ -256,6 +225,12 @@ public class WheelBlockEntity extends KineticBlockEntity {
                         this.wheelRadius,
                         isFreespin
                 );
+
+                TrackworkUtil.ClipResult clipResult = controller.getSuspensionData(this.getBlockPos());
+
+                double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? susScaled : clipResult.suspensionLength().length() - 0.5;
+                boolean isOnGround = !clipResult.equals(TrackworkUtil.ClipResult.MISS);
+
                 this.suspensionScale = controller.updateTrackBlock(this.getBlockPos(), data);
                 float newWheelTravel = (float) (suspensionTravel + restOffset);
                 float delta = newWheelTravel - wheelTravel;
@@ -298,38 +273,6 @@ public class WheelBlockEntity extends KineticBlockEntity {
     public void lazyTick() {
         super.lazyTick();
         if (this.assembled && !this.level.isClientSide && this.ship.get() != null) this.syncToClient();
-    }
-
-    public record ClipResult(Vector3dc trackTangent, Vec3 suspensionLength, @Nullable Long groundShipId) {
-    }
-
-    // TODO: Terrain dynamics
-    // Ground pressure?
-    private @NotNull ClipResult clipAndResolve(ServerShip ship, Direction.Axis axis, Vec3 start, Vec3 dir) {
-        BlockHitResult bResult = this.level.clip(new ClipContext(start, start.add(dir), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        if (bResult.isInside()) {
-            // TODO: what to do if the wheel is inside?
-        }
-        if (bResult.getType() != HitResult.Type.BLOCK) {
-            return new ClipResult(new Vector3d(0), Vec3.ZERO, null);
-        }
-        Ship hitShip = VSGameUtilsKt.getShipObjectManagingPos(this.level, bResult.getBlockPos());
-        Long hitShipId = null;
-        if (hitShip != null) {
-            if (hitShip.equals(ship)) return new ClipResult(new Vector3d(0), Vec3.ZERO, null);
-            hitShipId = hitShip.getId();
-        }
-
-        Vec3 worldSpacehitExact = bResult.getLocation();
-        Vec3 forceNormal = start.subtract(worldSpacehitExact);
-        Vec3 worldSpaceAxis = toMinecraft(ship.getTransform().getShipToWorldRotation().transform(
-                TrackworkUtil.getAxisAsVec(axis).rotateAxis(this.getSteeringValue() * Math.toRadians(30), 0, 1, 0)
-        ));
-        return new ClipResult(
-                toJOML(worldSpaceAxis.cross(forceNormal)).normalize(),
-                forceNormal,
-                hitShipId
-        );
     }
 
     protected void onLinkedWheel(Consumer<WheelBlockEntity> action) {

@@ -229,7 +229,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                     Vector3dc idealPos = ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos())));
 
                     double distance = idealPos.distance(wheel.getShipTransform().getPositionInWorld());
-                    if (distance > 8f) {
+                    if (distance > 2f) {
                         WheelEntity.moveTo((ServerLevel) this.level, this.wheelId, idealPos);
                     }
                 }

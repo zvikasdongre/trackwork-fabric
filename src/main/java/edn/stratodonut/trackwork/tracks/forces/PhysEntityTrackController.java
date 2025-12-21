@@ -36,11 +36,11 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     @JsonIgnore
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
 
-    @JsonIgnore
-    @Deprecated(forRemoval = true)
+    @Deprecated
+    // For Backwards compatibility
     public final HashMap<Integer, PhysEntityTrackData> trackData = new HashMap<>();
-
     public final HashMap<Long, PhysEntityTrackData> trackData2 = new HashMap<>();
+
     @JsonIgnore
     private final ConcurrentLinkedQueue<Pair<Long, PhysEntityTrackData.CreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
     @JsonIgnore

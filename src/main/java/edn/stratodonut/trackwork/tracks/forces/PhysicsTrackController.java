@@ -47,6 +47,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
     public static final Vector3dc UP = new Vector3d(0, 1, 0);
 
     private final HashMap<Integer, PhysTrackData> trackData = new HashMap<>();
+    private final HashMap<Long, TrackworkUtil.ClipResult> suspensionData = new HashMap<>();
 
     @JsonIgnore
     private final ConcurrentLinkedQueue<Pair<Integer, PhysTrackData.PhysTrackCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
@@ -97,13 +98,14 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         Vector3d netLinearForce = new Vector3d(0);
         Vector3d netTorque = new Vector3d(0);
 
-        double coefficientOfPower = Math.min(2.0d, 14d / this.trackData.size());
-        this.trackData.forEach((id, data) -> {
-            Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, (PhysShipImpl) physShip, physLevel,
+        double coefficientOfPower = Math.min(2.0d, 14d / this.trackData2.size());
+        this.trackData2.forEach((id, data) -> {
+            ComputeResult computeResult = this.computeForce(data, (PhysShipImpl) physShip, physLevel,
                     coefficientOfPower);
-            if (forces.getFirst().isFinite()) {
-                netLinearForce.add(forces.getFirst());
-                netTorque.add(forces.getSecond());
+            suspensionData.put(id, computeResult.clipResult);
+            if (computeResult.linearForce.isFinite()) {
+                netLinearForce.add(computeResult.linearForce);
+                netTorque.add(computeResult.torque);
             }
         });
 
@@ -114,7 +116,9 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         }
     }
 
-    private Pair<Vector3dc, Vector3dc> computeForce(PhysTrackData data, PhysShipImpl ship, @NotNull PhysLevel physLevel,
+    private record ComputeResult(Vector3dc linearForce, Vector3dc torque, TrackworkUtil.ClipResult clipResult) {}
+
+    private ComputeResult computeForce(PhysTrackData data, PhysShipImpl ship, @NotNull PhysLevel physLevel,
                                                     double coefficientOfPower) {
         Vec3 start = Vec3.atCenterOf(BlockPos.of(data.blockPos));
         Direction.Axis axis = data.wheelAxis;
@@ -133,7 +137,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         TrackworkUtil.ClipResult clipResult = TrackworkUtil.clipAndResolvePhys(
                 physLevel, ship, TrackworkUtil.getAxisAsVec(axis),
                 toJOML(worldSpaceStart.add(worldSpaceHorizontalOffset)), toJOML(worldSpaceNormal),
-                data.wheelRadius, 1);
+                data.wheelRadius, 0);
                 // Apply forces at the center of the block to reduce pitching moment from acceleration
         Vector3dc trackContactPosition = toJOML(worldSpaceStart);
         trackTangentForce = clipResult.trackTangent().mul(data.wheelRadius / 0.5, new Vector3d());
@@ -196,7 +200,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
 
         Vector3dc trackRelPos = shipTransform.getShipToWorldRotation().transform(trackRelPosShip, new Vector3d());
         Vector3dc torque = trackRelPos.cross(tForce, new Vector3d());
-        return new Pair<>(tForce, torque);
+        return new ComputeResult(tForce, torque, clipResult);
     }
 
     public int addTrackBlock(PhysTrackData.PhysTrackCreateData data) {
@@ -239,6 +243,10 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
 
     private double tilt(Vector3dc relPos) {
         return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
+    }
+
+    public TrackworkUtil.ClipResult getSuspensionData(BlockPos pos) {
+        return suspensionData.get(pos.asLong());
     }
 
     public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {

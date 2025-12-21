@@ -49,11 +49,14 @@ public class TrackworkUtil {
         ReducedRayCastResult bResult;
         Stream<Vector3dc> points;
         if (order == 0) {
+            // Single point
             points = Stream.of(start);
         } else if (order == 1) {
+            // 3 point line
             double contactWidth = 0.5;
             points = Stream.of(tangent.mul(-contactWidth, new Vector3d()).add(start), start, tangent.mul(contactWidth, new Vector3d()).add(start));
         } else if (order == 2) {
+            // 3 point circle
             // sqrt(2)/2 = 0.707106781187
             double contactWidth = 0.707106781187 * wheelRadius;
             double heightOverArc = wheelRadius * (1 - 0.707106781187);
