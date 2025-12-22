@@ -51,7 +51,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
     // steering (float) and axis (direction)
     private final HashMap<Long, SimpleWheelData.ExtraWheelData> steeringData = new HashMap<>();
     @JsonIgnore
-    private final HashMap<Long, TrackworkUtil.ClipResult> suspensionData = new HashMap<>();
+    private final ConcurrentHashMap<Long, TrackworkUtil.ClipResult> suspensionData = new ConcurrentHashMap<>();
 
     @JsonIgnore
     private final ConcurrentLinkedQueue<Pair<Long, SimpleWheelData.SimpleWheelCreateData>> createdTrackData = new ConcurrentLinkedQueue<>();
