@@ -21,10 +21,7 @@ import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -112,10 +109,14 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         Vector3d netLinearForce = new Vector3d(0);
         Vector3d netTorque = new Vector3d(0);
 
+        // Thanks java
+        long[] ignoreWheelIds = PhysEntityTrackController.getWheelIds(physShip.getId())
+                .stream().mapToLong(l -> l).toArray();
+
         double coefficientOfPower = Math.min(2.0d, 14d / this.trackData2.size());
         this.trackData2.forEach((id, data) -> {
             ComputeResult computeResult = this.computeForce(data, (PhysShipImpl) physShip, physLevel,
-                    coefficientOfPower);
+                    coefficientOfPower, ignoreWheelIds);
             suspensionData.put(id, computeResult.clipResult);
             if (computeResult.linearForce.isFinite()) {
                 netLinearForce.add(computeResult.linearForce);
@@ -133,7 +134,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
     private record ComputeResult(Vector3dc linearForce, Vector3dc torque, TrackworkUtil.ClipResult clipResult) {}
 
     private ComputeResult computeForce(PhysTrackData data, PhysShipImpl ship, @NotNull PhysLevel physLevel,
-                                                    double coefficientOfPower) {
+                                                    double coefficientOfPower, long[] ignoreWheelIds) {
         Vec3 start = Vec3.atCenterOf(BlockPos.of(data.blockPos));
         Direction.Axis axis = data.wheelAxis;
         double restOffset = data.wheelRadius - 0.5f;
@@ -151,7 +152,7 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         TrackworkUtil.ClipResult clipResult = TrackworkUtil.clipAndResolvePhys(
                 physLevel, ship, TrackworkUtil.getAxisAsVec(axis),
                 toJOML(worldSpaceStart.add(worldSpaceHorizontalOffset)), toJOML(worldSpaceNormal),
-                data.wheelRadius, 0);
+                data.wheelRadius, 1, ignoreWheelIds);
                 // Apply forces at the center of the block to reduce pitching moment from acceleration
         Vector3dc trackContactPosition = toJOML(worldSpaceStart);
         trackTangentForce = clipResult.trackTangent().mul(data.wheelRadius / 0.5, new Vector3d());

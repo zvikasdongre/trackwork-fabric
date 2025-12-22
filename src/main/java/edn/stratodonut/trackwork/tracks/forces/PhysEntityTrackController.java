@@ -20,10 +20,8 @@ import org.valkyrienskies.core.internal.world.VsiPhysLevel;
 import org.valkyrienskies.mod.api.ValkyrienSkies;
 import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Queue;
+import javax.annotation.Nonnull;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -47,6 +45,9 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     private final ConcurrentHashMap<Long, PhysEntityTrackData.UpdateData> trackUpdateData = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Long> removedTracks = new ConcurrentLinkedQueue<>();
     private final HashMap<Long, Integer> posToJointId = new HashMap<>();
+
+    @JsonIgnore
+    private static final ConcurrentHashMap<Long, List<Long>> wheelIdsPerVehicle = new ConcurrentHashMap<>();
 
     @JsonIgnore
     @Deprecated(forRemoval = true)
@@ -89,13 +90,16 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
         if (this.trackData2.isEmpty()) return;
 
         double coefficientOfPower = Math.min(1.0d, 4d / this.trackData2.size());
+        List<Long> wheelIds = new ArrayList<>();
         this.trackData2.forEach((id, data) -> {
+            wheelIds.add(data.shiptraptionID);
             PhysShip wheel = physLevel.getShipById(data.shiptraptionID);
             Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), (PhysShipImpl)wheel, coefficientOfPower);
             if (forces != null) {
                 if (forces.getSecond().isFinite()) wheel.applyWorldTorque(forces.getSecond());
             }
         });
+        wheelIdsPerVehicle.put(physShip.getId(), wheelIds);
     }
 
     private Pair<@NotNull Vector3dc, @NotNull Vector3dc> computeForce(PhysEntityTrackData data, PhysShip ship, PhysShip wheel, double coefficientOfPower) {
@@ -129,6 +133,10 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
                     return null;
                 }
         );
+    }
+
+    public static @Nonnull List<Long> getWheelIds(long vehicleId) {
+        return wheelIdsPerVehicle.getOrDefault(vehicleId, new ArrayList<>());
     }
 
     @Deprecated

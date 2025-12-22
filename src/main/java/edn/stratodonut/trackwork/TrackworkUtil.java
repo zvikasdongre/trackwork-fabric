@@ -41,7 +41,8 @@ public class TrackworkUtil {
     // TODO: Terrain dynamics
     // Ground pressure?
     public static @Nonnull ClipResult clipAndResolvePhys(PhysLevel physLevel, PhysShip ship, Vector3dc steeringAxis,
-                                                   Vector3dc start, Vector3dc clipVector, double wheelRadius, int order) {
+                                                     Vector3dc start, Vector3dc clipVector, double wheelRadius, int order,
+                                                     long... ignoreWheelIds) {
         Vector3dc worldSpaceAxis = ship.getTransform().getShipToWorldRotation().transform(steeringAxis, new Vector3d());
         Vector3dc normal = clipVector.normalize(new Vector3d());
         Vector3dc tangent = worldSpaceAxis.cross(normal, new Vector3d());
@@ -69,8 +70,10 @@ public class TrackworkUtil {
             throw new IllegalArgumentException(String.format("Invalid clip order. Must be 0, 1 or 2, received %d", order));
         }
 
-        Optional<ReducedRayCastResult> accumResult = points.map(p -> physLevel.rayCast(p, normal, clipVector.length()))
+        Optional<ReducedRayCastResult> accumResult = points
+                .map(p -> physLevel.rayCast(p, normal, clipVector.length(), ignoreWheelIds))
                 .filter(Objects::nonNull)
+                .filter(result -> result.getHitBody().getId() != ship.getId())
                 .map(result -> new ReducedRayCastResult(result.getDistance(), result.getVelocity()))
                 .reduce((a,b) -> new ReducedRayCastResult(
                         Math.min(a.distance, b.distance),
