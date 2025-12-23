@@ -1,6 +1,7 @@
 package edn.stratodonut.trackwork.tracks.data;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.joml.Vector3dc;
 import org.valkyrienskies.core.internal.joints.VSRevoluteJoint;
 
@@ -15,6 +16,7 @@ public class PhysEntityTrackData {
     public final long shiptraptionID;
     public final double springConstant;
     public final double damperConstant;
+    @JsonIgnore
     public final VSRevoluteJoint constraint;
     public volatile Integer axleId;
     public final double trackRPM;
@@ -47,14 +49,14 @@ public class PhysEntityTrackData {
     }
 
     public final PhysEntityTrackData updateWith(@Nonnull UpdateData update) {
-        return new PhysEntityTrackData(this.trackPos, this.wheelAxis, this.shiptraptionID, update.springConstant, update.damperConstant, this.constraint, axleId, update.trackRPM, this.previousSpringDist);
+        return new PhysEntityTrackData(this.trackPos, this.wheelAxis, update.shiptraptionID, update.springConstant, update.damperConstant, this.constraint, axleId, update.trackRPM, this.previousSpringDist);
     }
 
     public static PhysEntityTrackData from(@Nonnull CreateData data) {
         return new PhysEntityTrackData(data.trackPos, data.wheelAxis, data.shiptraptionID, data.springConstant, data.damperConstant, data.constraint, -1, data.trackRPM, 0);
     }
 
-    public record UpdateData(double springConstant, double damperConstant, double trackRPM) {
+    public record UpdateData(double springConstant, double damperConstant, double trackRPM, long shiptraptionID) {
     }
 
     public record CreateData(Vector3dc trackPos, Vector3dc wheelAxis, long shiptraptionID, double springConstant, double damperConstant, VSRevoluteJoint constraint, double trackRPM) {

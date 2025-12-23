@@ -242,7 +242,8 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 PhysEntityTrackData.UpdateData data = new PhysEntityTrackData.UpdateData(
                         0,
                         0,
-                        this.getSpeed()
+                        this.getSpeed(),
+                        this.wheelId
                 );
                 controller.updateTrackBlock(this.getBlockPos(), data);
 

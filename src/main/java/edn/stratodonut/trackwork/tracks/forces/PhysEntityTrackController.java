@@ -57,16 +57,17 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     }
 
     public static PhysEntityTrackController getOrCreate(LoadedServerShip ship) {
-        if (ship.getAttachment(PhysEntityTrackController.class) == null) {
-            ship.setAttachment(PhysEntityTrackController.class, new PhysEntityTrackController());
-        }
-
-        return ship.getAttachment(PhysEntityTrackController.class);
+        return ship.getOrPutAttachment(PhysEntityTrackController.class, PhysEntityTrackController::new);
     }
 
 
     @Override
     public void physTick(@NotNull PhysShip physShip, @NotNull PhysLevel physLevel) {
+        while (!removedTracks.isEmpty()) {
+            Long removeId = this.removedTracks.remove();
+            this.trackData2.remove(removeId);
+        }
+
         while (!this.createdTrackData.isEmpty()) {
             Pair<Long, PhysEntityTrackData.CreateData> createData = this.createdTrackData.remove();
             if (createData.getFirst() != null && createData.getSecond() != null) this.trackData2.put(createData.getFirst(), PhysEntityTrackData.from(createData.getSecond()));
@@ -82,11 +83,6 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
         this.trackUpdateData.clear();
 
 //         Idk why, but sometimes removing a block can send an update in the same tick(?), so this is last.
-        while (!removedTracks.isEmpty()) {
-            Long removeId = this.removedTracks.remove();
-            this.trackData2.remove(removeId);
-        }
-
         if (this.trackData2.isEmpty()) return;
 
         double coefficientOfPower = Math.min(1.0d, 4d / this.trackData2.size());
