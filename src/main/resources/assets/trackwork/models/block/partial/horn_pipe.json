@@ -1,9 +1,9 @@
 {
   "loader": "forge:obj",
-  "model": "trackwork:models/block/partial/horn.obj",
+  "model": "trackwork:models/block/partial/horn_pipe.obj",
   "textures": {
-  "0": "trackwork:block/horn",
-  "particle": "create:block/axis"
+    "0": "trackwork:block/horn",
+    "particle": "create:block/axis"
   },
   "flip_v": true,
   "display": {

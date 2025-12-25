@@ -20,7 +20,8 @@ public class TrackworkPartialModels {
             SIMPLE_WHEEL_RIB = block("partial/simple_wheel_rib"),
             SIMPLE_WHEEL_RIB_UPPER = block("partial/simple_wheel_rib_upper"),
             SIMPLE_WHEEL_SPRING_BASE = block("partial/simple_wheel_spring_base"),
-            SIMPLE_WHEEL_SPRING_COIL = block("partial/simple_wheel_spring_coil");
+            SIMPLE_WHEEL_SPRING_COIL = block("partial/simple_wheel_spring_coil"),
+            HORN_PIPE = block("partial/horn_pipe");
 
     private static PartialModel block(String path) {
         return PartialModel.of(TrackworkMod.getResource("block/" + path));

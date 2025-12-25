@@ -9,7 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
@@ -38,7 +37,7 @@ public class HornBlockEntity extends SmartBlockEntity {
 
         if (!level.isClientSide) return;
 
-        boolean powered = playOverrideTicks > 0 || getBlockState().getOptionalValue(HornBlock.POWERED).orElse(false);
+        boolean powered = getPowered();
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> this.tickSound(note, powered));
     }
 
@@ -55,11 +54,14 @@ public class HornBlockEntity extends SmartBlockEntity {
         }
 
         float pitch = note * 0.2f;
-        Vec3 worldPos = VSGameUtilsKt.toWorldCoordinates(this.level, worldPosition.getCenter());
         if (soundInstance == null || soundInstance.isStopped() || soundInstance.getNote() != note) {
             Minecraft.getInstance()
-                    .getSoundManager()
-                    .play(soundInstance = new HornSoundInstance(note, worldPos));
+                .getSoundManager()
+                .play(soundInstance = new HornSoundInstance(
+                        note,
+                        this.getBlockPos(),
+                        VSGameUtilsKt.getLoadedShipManagingPos(this.level, this.getBlockPos())
+                ));
         }
 
         soundInstance.keepAlive();
@@ -74,6 +76,10 @@ public class HornBlockEntity extends SmartBlockEntity {
 
     public void cycleNote() {
         this.note = ++this.note % PITCH_RANGE;
+    }
+
+    public boolean getPowered() {
+        return playOverrideTicks > 0 || getBlockState().getOptionalValue(HornBlock.POWERED).orElse(false);
     }
 
     @Override

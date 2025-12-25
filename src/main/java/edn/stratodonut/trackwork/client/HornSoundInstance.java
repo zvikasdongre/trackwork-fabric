@@ -3,29 +3,52 @@ package edn.stratodonut.trackwork.client;
 import edn.stratodonut.trackwork.TrackSounds;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.Ship;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
 
 public class HornSoundInstance extends AbstractTickableSoundInstance {
     private boolean playing;
     private int ticksLeft;
     private int note;
 
-    public HornSoundInstance(int note, Vec3 pos) {
-        super(TrackSounds.HORN.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
+    private @Nonnull BlockPos anchorPos;
+    private @Nullable Ship ship;
+
+    public HornSoundInstance(int note, BlockPos pos, @Nullable Ship ship) {
+        super(TrackSounds.HORN.get(), SoundSource.RECORDS, SoundInstance.createUnseededRandom());
         this.note = note;
         looping = true;
         playing = true;
         volume = 0.5f;
         delay = 0;
         this.keepAlive();
-        x = pos.x;
-        y = pos.y;
-        z = pos.z;
+        this.anchorPos = pos;
+        Vector3dc worldPos = toJOML(pos.getCenter());
+        if (ship != null) {
+            worldPos = ship.getShipToWorld().transformPosition(toJOML(anchorPos.getCenter()));
+        }
+        x = worldPos.x();
+        y = worldPos.y();
+        z = worldPos.z();
+        this.ship = ship;
     }
 
     @Override
     public void tick() {
+        if (ship != null) {
+            Vector3dc worldPos = ship.getShipToWorld().transformPosition(toJOML(anchorPos.getCenter()));
+            x = worldPos.x();
+            y = worldPos.y();
+            z = worldPos.z();
+        }
+
         if (playing) {
             volume = Math.min(1, volume + .25f);
             this.ticksLeft--;
@@ -34,7 +57,7 @@ public class HornSoundInstance extends AbstractTickableSoundInstance {
             }
             return;
         }
-        volume = Math.max(0, volume - .25f);
+        volume = Math.max(0, volume - .5f);
         if (volume == 0) {
             stop();
         }

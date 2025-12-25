@@ -179,7 +179,7 @@ public class TrackBlocks {
     public static final BlockEntry<HornBlock> HORN =
             REGISTRATE.block("horn", HornBlock::new)
                     .initialProperties(SharedProperties::copperMetal)
-                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().sound(SoundType.METAL))
                     .transform(axeOrPickaxe())
                     .blockstate(BlockStateGen.directionalBlockProvider(true))
                     .item()
