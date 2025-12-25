@@ -14,6 +14,8 @@
   "block.trackwork.large_simple_wheel_part": "Gigantic Spare Tire",
   "block.trackwork.small_simple_wheel": "Small Wheel",
   "block.trackwork.small_simple_wheel_part":"Small Spare Tire",
+  "block.trackwork.horn": "Car Horn",
+  "block.trackwork.horn.tooltip.summary": "Activates via redstone, _right click_ to set the pitch.",
 
   "itemGroup.trackwork": "Trackwork",
   "item.trackwork.track_tool_kit" : "Track Toolkit",

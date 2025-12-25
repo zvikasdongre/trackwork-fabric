@@ -101,5 +101,15 @@
         "type": "file"
       }
     ]
+  },
+  "honk": {
+    "subtitle": "subtitle.trackwork.honk",
+    "sounds" : [
+      {
+        "name": "trackwork:honk",
+        "type": "file",
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

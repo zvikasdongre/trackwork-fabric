@@ -8,6 +8,7 @@ import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import edn.stratodonut.trackwork.blocks.HornBlock;
 import edn.stratodonut.trackwork.blocks.TrackAdjusterBlock;
 import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock;
@@ -137,8 +138,6 @@ public class TrackBlocks {
                     .register();
 
     public static final BlockEntry<WheelBlock> SMALL_SIMPLE_WHEEL =
-
-
             REGISTRATE.block("small_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.SMALL_SIMPLE_WHEEL))
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
@@ -153,16 +152,6 @@ public class TrackBlocks {
     public static final BlockEntry<? extends RotatedPillarBlock> MED_SIMPLE_WHEEL_PART = wheelpart("med_simple_wheel_part");
     public static final BlockEntry<? extends RotatedPillarBlock> SMALL_SIMPLE_WHEEL_PART = wheelpart("small_simple_wheel_part");
 
-    public static final BlockEntry<TrackAdjusterBlock> TRACK_LEVEL_CONTROLLER =
-            REGISTRATE.block("track_level_controller", TrackAdjusterBlock::new)
-                    .initialProperties(SharedProperties::stone)
-                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
-                    .transform(axeOrPickaxe())
-                    .blockstate(BlockStateGen.axisBlockProvider(true))
-                    .item()
-                    .transform(customItemModel())
-                    .register();
-
     public static BlockEntry<? extends RotatedPillarBlock> wheelpart(String name) {
         return REGISTRATE.block(name, (properties) -> new RotatedPillarBlock(properties) {
                     @Override
@@ -176,6 +165,26 @@ public class TrackBlocks {
                 .transform(customItemModel())
                 .register();
     }
+
+    public static final BlockEntry<TrackAdjusterBlock> TRACK_LEVEL_CONTROLLER =
+            REGISTRATE.block("track_level_controller", TrackAdjusterBlock::new)
+                    .initialProperties(SharedProperties::stone)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
+                    .transform(axeOrPickaxe())
+                    .blockstate(BlockStateGen.axisBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
+
+    public static final BlockEntry<HornBlock> HORN =
+            REGISTRATE.block("horn", HornBlock::new)
+                    .initialProperties(SharedProperties::copperMetal)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
+                    .transform(axeOrPickaxe())
+                    .blockstate(BlockStateGen.directionalBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
     
     public static void register() {}
 }

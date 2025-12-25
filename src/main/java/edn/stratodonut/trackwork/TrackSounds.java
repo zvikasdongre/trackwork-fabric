@@ -28,6 +28,8 @@ public class TrackSounds {
     public static final RegistryObject<SoundEvent> WHEEL_AMBIENT_GROUND_2 = registerSoundEvents("wheel_ambient_ground_2");
     public static final RegistryObject<SoundEvent> WHEEL_GROUND_SLIP = registerSoundEvents("wheel_ground_slip");
 
+    public static final RegistryObject<SoundEvent> HORN = registerSoundEvents("honk");
+
     private static RegistryObject<SoundEvent> registerSoundEvents(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(TrackworkMod.MOD_ID, name)));
     }

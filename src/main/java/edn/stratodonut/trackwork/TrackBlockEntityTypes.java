@@ -2,6 +2,7 @@ package edn.stratodonut.trackwork;
 
 import com.simibubi.create.content.kinetics.base.ShaftRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import edn.stratodonut.trackwork.blocks.HornBlockEntity;
 import edn.stratodonut.trackwork.blocks.TrackAdjusterBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
@@ -9,6 +10,9 @@ import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
 import edn.stratodonut.trackwork.tracks.render.PhysEntityTrackRenderer;
 import edn.stratodonut.trackwork.tracks.render.SimpleWheelRenderer;
 import edn.stratodonut.trackwork.tracks.render.SuspensionRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.world.level.block.Block;
+import org.valkyrienskies.mod.client.EmptyRenderer;
 
 import static edn.stratodonut.trackwork.TrackworkMod.REGISTRATE;
 
@@ -84,6 +88,11 @@ public class TrackBlockEntityTypes {
             .blockEntity("track_level_controller", TrackAdjusterBlockEntity::new)
             .validBlocks(TrackBlocks.TRACK_LEVEL_CONTROLLER)
             .renderer(() -> ShaftRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<HornBlockEntity> HORN = REGISTRATE
+            .blockEntity("horn", HornBlockEntity::new)
+            .validBlocks(TrackBlocks.HORN)
             .register();
 
     public static void register() {}
