@@ -130,6 +130,13 @@ public class SuspensionTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void tick() {
         super.tick();
 
+        // Backwards compatibility
+        if (this.trackID != null) {
+            this.trackID = null;
+            this.assembled = false;
+            this.assembleNextTick = true;
+        }
+
         if (this.ship.get() != null && this.assembleNextTick && !this.assembled && this.level != null) {
             this.assemble();
             this.assembleNextTick = false;

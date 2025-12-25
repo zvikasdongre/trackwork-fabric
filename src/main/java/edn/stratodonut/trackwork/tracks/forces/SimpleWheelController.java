@@ -21,6 +21,7 @@ import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
@@ -259,8 +260,8 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         return Math.signum(relPos.x()) * this.suspensionAdjust.z() + Math.signum(relPos.z()) * this.suspensionAdjust.x();
     }
 
-    public TrackworkUtil.ClipResult getSuspensionData(BlockPos pos) {
-        return suspensionData.get(pos.asLong());
+    public @Nonnull TrackworkUtil.ClipResult getSuspensionData(BlockPos pos) {
+        return suspensionData.getOrDefault(pos.asLong(), TrackworkUtil.ClipResult.MISS);
     }
 
     public static <T> boolean areQueuesEqual(Queue<T> left, Queue<T> right) {
