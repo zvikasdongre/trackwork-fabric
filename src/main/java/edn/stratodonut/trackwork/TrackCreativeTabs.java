@@ -24,7 +24,7 @@ public class TrackCreativeTabs {
     public static final RegistryObject<CreativeModeTab> BASE_CREATIVE_TAB = REGISTER.register("base",
             () -> CreativeModeTab.builder()
                     .title(translatable("itemGroup.trackwork"))
-                    .icon(AllBlocks.BELT::asStack)
+                    .icon(TrackBlocks.SIMPLE_WHEEL_PART::asStack)
                     .displayItems((displayParams, output) -> {
                         for (RegistryEntry<Block> entry : REGISTRATE.getAll(Registries.BLOCK)) {
                             if (CreateRegistrate.isInCreativeTab(entry, AllCreativeModeTabs.BASE_CREATIVE_TAB))
