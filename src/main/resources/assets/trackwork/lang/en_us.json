@@ -5,7 +5,10 @@
   "block.trackwork.phys_track" : "Sprocket Track",
   "block.trackwork.med_phys_track" : "Medium  Sprocket Track",
   "block.trackwork.large_phys_track" : "Large Sprocket Track",
+
   "block.trackwork.track_level_controller" : "Suspension Controller",
+  "block.trackwork.track_level_controller.tooltip.summary": "_Input rotation_ to tilt and adjust suspension across the ship!",
+
   "block.trackwork.simple_wheel": "Large Wheel",
   "block.trackwork.simple_wheel_part": "Large Spare Tire",
   "block.trackwork.med_simple_wheel": "Medium Wheel",
@@ -14,6 +17,7 @@
   "block.trackwork.large_simple_wheel_part": "Gigantic Spare Tire",
   "block.trackwork.small_simple_wheel": "Small Wheel",
   "block.trackwork.small_simple_wheel_part":"Small Spare Tire",
+
   "block.trackwork.horn": "Car Horn",
   "block.trackwork.horn.tooltip.summary": "Activates via redstone, _right click_ to set the pitch.",
 
