@@ -37,7 +37,7 @@ description='''${mod_authors}'''
 [[dependencies."${mod_id}"]]
     modId="valkyrienskies"
     mandatory=true
-    versionRange="[2,)"
+    versionRange="[2.4,)"
     ordering="AFTER"
     side="BOTH"
 
