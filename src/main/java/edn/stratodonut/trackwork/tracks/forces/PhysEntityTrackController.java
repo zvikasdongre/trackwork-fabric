@@ -7,7 +7,6 @@ import edn.stratodonut.trackwork.TrackworkMod;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Vector3d;
@@ -16,7 +15,6 @@ import org.valkyrienskies.core.api.ships.*;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
 import org.valkyrienskies.core.api.world.PhysLevel;
 import org.valkyrienskies.core.impl.game.ships.PhysShipImpl;
-import org.valkyrienskies.core.internal.world.VsiPhysLevel;
 import org.valkyrienskies.mod.api.ValkyrienSkies;
 import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
@@ -47,7 +45,7 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     private final HashMap<Long, Integer> posToJointId = new HashMap<>();
 
     @JsonIgnore
-    private static final ConcurrentHashMap<Long, List<Long>> wheelIdsPerVehicle = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, List<Long>> ignoreIdsPerVehicle = new ConcurrentHashMap<>();
 
     @JsonIgnore
     @Deprecated(forRemoval = true)
@@ -86,16 +84,17 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
         if (this.trackData2.isEmpty()) return;
 
         double coefficientOfPower = Math.min(1.0d, 4d / this.trackData2.size());
-        List<Long> wheelIds = new ArrayList<>();
+        List<Long> ignoreIds = new ArrayList<>();
         this.trackData2.forEach((id, data) -> {
-            wheelIds.add(data.shiptraptionID);
+            ignoreIds.add(data.shiptraptionID);
             PhysShip wheel = physLevel.getShipById(data.shiptraptionID);
             Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), (PhysShipImpl)wheel, coefficientOfPower);
             if (forces != null) {
                 if (forces.getSecond().isFinite()) wheel.applyWorldTorque(forces.getSecond());
             }
         });
-        wheelIdsPerVehicle.put(physShip.getId(), wheelIds);
+        ignoreIds.add(physShip.getId());
+        ignoreIdsPerVehicle.put(physShip.getId(), ignoreIds);
     }
 
     private Pair<@NotNull Vector3dc, @NotNull Vector3dc> computeForce(PhysEntityTrackData data, PhysShip ship, PhysShip wheel, double coefficientOfPower) {
@@ -132,7 +131,7 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
     }
 
     public static @Nonnull List<Long> getWheelIds(long vehicleId) {
-        return wheelIdsPerVehicle.getOrDefault(vehicleId, new ArrayList<>());
+        return ignoreIdsPerVehicle.getOrDefault(vehicleId, new ArrayList<>());
     }
 
     @Deprecated
