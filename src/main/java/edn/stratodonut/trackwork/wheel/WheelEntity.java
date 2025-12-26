@@ -38,13 +38,13 @@ public class WheelEntity {
     }
 
     public static void createInLevel(ServerLevel level, PhysicsEntityData data) {
-        // Try adding the rigid body of this entity from the world
         VSGameUtilsKt.getShipObjectWorld(level).createPhysicsEntity(data, ((DimensionIdProvider) level).getDimensionId());
     }
 
     public static void removeInLevel(ServerLevel level, long id) {
-        // Try removing the rigid body of this entity from the world
-        VSGameUtilsKt.getShipObjectWorld(level).deletePhysicsEntity(id);
+        if (aliveInLevel(level, id)) {
+            VSGameUtilsKt.getShipObjectWorld(level).deletePhysicsEntity(id);
+        }
     }
 
     public static boolean moveTo(ServerLevel level, long id, Vector3dc pos) {

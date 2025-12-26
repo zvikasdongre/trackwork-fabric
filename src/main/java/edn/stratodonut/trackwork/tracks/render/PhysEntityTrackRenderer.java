@@ -56,7 +56,7 @@ public class PhysEntityTrackRenderer extends KineticBlockEntityRenderer<PhysEnti
         cogs.light(light)
                 .renderInto(ms, buffer.getBuffer(RenderType.solid()));
 
-        if (be.assembled) TrackBeltRenderer.renderBelt(be, partialTicks, ms, buffer, light, new TrackBeltRenderer.ScalableScroll(be, (float) (be.getSpeed() * (be.getWheelRadius() / 0.5)), trackAxis));
+        if (be.getAssembled()) TrackBeltRenderer.renderBelt(be, partialTicks, ms, buffer, light, new TrackBeltRenderer.ScalableScroll(be, (float) (be.getSpeed() * (be.getWheelRadius() / 0.5)), trackAxis));
     }
 
     public static float getAngleForBE(KineticBlockEntity be, final BlockPos pos, Direction.Axis axis) {

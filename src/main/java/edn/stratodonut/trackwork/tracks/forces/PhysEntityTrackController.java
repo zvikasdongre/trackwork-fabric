@@ -90,7 +90,7 @@ public final class PhysEntityTrackController implements ShipPhysicsListener {
             PhysShip wheel = physLevel.getShipById(data.shiptraptionID);
             Pair<Vector3dc, Vector3dc> forces = this.computeForce(data, ((PhysShipImpl) physShip), (PhysShipImpl)wheel, coefficientOfPower);
             if (forces != null) {
-                if (forces.getSecond().isFinite()) wheel.applyWorldTorque(forces.getSecond());
+//                if (forces.getSecond().isFinite()) wheel.applyWorldTorque(forces.getSecond());
             }
         });
         ignoreIds.add(physShip.getId());

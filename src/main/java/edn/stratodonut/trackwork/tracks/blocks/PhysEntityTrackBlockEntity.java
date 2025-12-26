@@ -58,7 +58,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     private Integer trackID;
     @Nullable
     private Long wheelId;
-    public boolean assembled;
+    private boolean assembled;
     public boolean assembleNextTick = true;
     MutableComponent chatMessage = MutableComponent.create(ComponentContents.EMPTY);
 
@@ -92,9 +92,7 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
                 controller.removeTrackBlock((ServerLevel) this.level, this.getBlockPos());
 
-                if (this.wheelId != null) {
-                    WheelEntity.removeInLevel((ServerLevel) this.level, this.wheelId);
-                }
+                this.cleanupWheel();
             }
         }
     }
@@ -110,11 +108,11 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                     this.asyncConstrainWheel(ship, this.wheelId, toJOML(Vec3.atCenterOf(this.getBlockPos())));
                 } else {
                     this.assemble();
-                    return;
                 }
+                return;
             }
 
-            this.assembled = false;
+            this.disassemble();
             this.assembleNextTick = true;
         }
     }
@@ -126,7 +124,8 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
             LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
-                if (this.assembled) {
+                if (this.getAssembled()) {
+                    this.disassemble();
                     controller.removeTrackBlock((ServerLevel) this.level, this.getBlockPos());
                 }
                 this.assembled = true;
@@ -146,6 +145,11 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 this.sendData();
             }
         }
+    }
+
+    public void disassemble() {
+        this.assembled = false;
+        cleanupWheel();
     }
 
     /***
@@ -203,15 +207,19 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     public void tick() {
         super.tick();
 
-        // Compatibility with new system
+        // For backwards compatibility
         if (this.trackID != null) {
             this.assembled = false;
             this.trackID = null;
         }
 
-        if (this.ship.get() != null && this.assembleNextTick && !this.assembled && this.level != null) {
-            this.assemble();
-            this.assembleNextTick = false;
+        if (this.ship.get() != null && !this.assembled && this.level != null) {
+            if (this.assembleNextTick) {
+                this.assemble();
+                this.assembleNextTick = false;
+            } else {
+                this.assembleNextTick = true;
+            }
             return;
         }
 
@@ -268,6 +276,16 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         if (spd < 8)
             return;
         TrackSoundScapes.play(TrackAmbientGroups.TRACK_SPROCKET_AMBIENT, worldPosition, pitch);
+    }
+
+    public boolean getAssembled() {
+        return assembled;
+    }
+
+    public void cleanupWheel() {
+        if (this.wheelId != null) {
+            WheelEntity.removeInLevel((ServerLevel) this.level, this.wheelId);
+        }
     }
 
 //    @Override
