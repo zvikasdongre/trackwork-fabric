@@ -84,13 +84,10 @@ public class TrackworkUtil {
         }
 
         bResult = new ReducedRayCastResult(accumResult.get().distance, accumResult.get().velocity);
-        if (bResult.distance < 0) {
-            // TODO: what to do if the wheel is inside?
-        }
         Vector3dc worldSpacehitExact = normal.normalize(bResult.distance, new Vector3d()).add(start);
         Vector3dc forceNormal = start.sub(worldSpacehitExact, new Vector3d());
         return new ClipResult(
-                worldSpaceAxis.cross(forceNormal, new Vector3d()).normalize(),
+                worldSpaceAxis.cross(normal, new Vector3d()).normalize(),
                 forceNormal,
                 bResult.velocity()
         );
