@@ -150,7 +150,7 @@ public final class SimpleWheelController implements ShipPhysicsListener {
         TrackworkUtil.ClipResult clipResult = TrackworkUtil.clipAndResolvePhys(physLevel, ship,
                 TrackworkUtil.getAxisAsVec(axis).rotateAxis(steeringValue * Math.toRadians(30), 0, 1, 0),
                 toJOML(worldSpaceStart.add(worldSpaceOffset)), toJOML(worldSpaceNormal),
-                steeringInfo.wheelRadius(), 2);
+                steeringInfo.wheelRadius(), 2, ship.getId());
         forceVec = clipResult.trackTangent().mul(steeringInfo.wheelRadius() / 0.5, new Vector3d());
 
         double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? susScaled : clipResult.suspensionLength().length() - 0.5;
