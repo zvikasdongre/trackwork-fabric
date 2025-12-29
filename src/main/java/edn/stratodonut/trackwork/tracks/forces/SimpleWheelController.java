@@ -170,9 +170,15 @@ public final class SimpleWheelController implements ShipPhysicsListener {
             velocityAtPosition = velocityAtPosition.sub(clipResult.groundVelocity(), new Vector3d());
         }
 
+        double suspensionCompressionDelta = 0f;
+        if (data.lastSuspensionForce != null) {
+            suspensionCompressionDelta = suspensionForce.sub(data.lastSuspensionForce, new Vector3d()).length();
+        }
+        data.lastSuspensionForce = suspensionForce;
+
         // Suspension
         if (isOnGround) {
-            double suspensionDelta = velocityAtPosition.dot(trackNormal) + data.getSuspensionCompressionDelta().length();
+            double suspensionDelta = velocityAtPosition.dot(trackNormal) + suspensionCompressionDelta;
             double tilt = 1 + this.tilt(trackRelPosShip);
 
             // Spring force (stiffness) - apply in world coordinates but calculated relative to local up
