@@ -88,8 +88,9 @@ public class OleoWheelBlock extends Block implements IBE<OleoWheelBlockEntity>, 
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        Player p = context.getPlayer();
         return defaultBlockState()
-                .setValue(AXLE_FACING, context.getHorizontalDirection())
+                .setValue(AXLE_FACING, p != null && p.isCrouching() ? context.getHorizontalDirection().getOpposite() : context.getHorizontalDirection())
                 .setValue(STRUT_FACING, Direction.DOWN);
     }
 

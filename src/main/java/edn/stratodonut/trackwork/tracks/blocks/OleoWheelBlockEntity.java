@@ -145,6 +145,10 @@ public class OleoWheelBlockEntity extends SmartBlockEntity {
             }
         }
 
+        if (this.level.isClientSide) {
+            this.prevFreeWheelAngle += this.getWheelSpeed() * 3f / 10;
+        }
+
         if (this.level.isClientSide) return;
 
         Direction axleDir = this.getBlockState().getValue(OleoWheelBlock.AXLE_FACING);
@@ -183,7 +187,7 @@ public class OleoWheelBlockEntity extends SmartBlockEntity {
             float oldSteeringValue = this.steeringValue;
 
             Direction axleCw = axleDir.getClockWise();
-            boolean isFreespin = !(this.level.hasSignal(this.getBlockPos().relative(axleCw), axleCw) ||
+            isFreespin = !(this.level.hasSignal(this.getBlockPos().relative(axleCw), axleCw) ||
                     this.level.hasSignal(this.getBlockPos().relative(axleCw.getOpposite()), axleCw.getOpposite()));
 
             // Smooth steering interpolation

@@ -165,7 +165,7 @@ public final class OleoWheelController implements ShipPhysicsListener {
             Vector3dc damperForce = trackNormal.mul(damperMagnitude, new Vector3d());
             tForce.add(damperForce);
             // Really half-assed antislip when the spring is stronger than friction (what?)
-            if (data.wheelRPM == 0 && !data.isFreespin) {
+            if (data.wheelRPM == 0) {
                 tForce = new Vector3d(0, tForce.y(), 0);
             }
         }
