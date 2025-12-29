@@ -1,6 +1,7 @@
 package edn.stratodonut.trackwork;
 
 import com.simibubi.create.foundation.networking.SimplePacketBase;
+import edn.stratodonut.trackwork.tracks.network.OleoWheelPacket;
 import edn.stratodonut.trackwork.tracks.network.SimpleWheelPacket;
 import edn.stratodonut.trackwork.tracks.network.SuspensionWheelPacket;
 import edn.stratodonut.trackwork.tracks.network.ThrowTrackPacket;
@@ -20,6 +21,7 @@ import static net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT;
 public enum TrackPackets {
     SUSPENSION_WHEEL(SuspensionWheelPacket.class, SuspensionWheelPacket::new, PLAY_TO_CLIENT),
     SIMPLE_WHEEL(SimpleWheelPacket.class, SimpleWheelPacket::new, PLAY_TO_CLIENT),
+    OLEO_WHEEL(OleoWheelPacket.class, OleoWheelPacket::new, PLAY_TO_CLIENT),
     THROW_TRACK(ThrowTrackPacket.class, ThrowTrackPacket::new, PLAY_TO_CLIENT);
 
     // DO NOT TOUCH ANYTHING BELOW THIS LINE, THANKS CREATE

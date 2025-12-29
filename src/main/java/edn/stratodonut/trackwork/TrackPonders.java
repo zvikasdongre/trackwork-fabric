@@ -24,6 +24,9 @@ public class TrackPonders {
 
         HELPER.forComponents(TrackBlocks.SIMPLE_WHEEL, TrackBlocks.MED_SIMPLE_WHEEL, TrackBlocks.LARGE_SIMPLE_WHEEL)
                 .addStoryBoard("wheels", TrackPonderScenes::wheelTutorial);
+
+        HELPER.forComponents(TrackBlocks.OLEO_WHEEL)
+                .addStoryBoard("oleo", TrackPonderScenes::landingGearTutorial);
     }
 
 

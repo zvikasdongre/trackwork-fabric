@@ -10,6 +10,7 @@ import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import edn.stratodonut.trackwork.blocks.HornBlock;
 import edn.stratodonut.trackwork.blocks.TrackAdjusterBlock;
+import edn.stratodonut.trackwork.tracks.blocks.OleoWheelBlock;
 import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlock;
@@ -24,6 +25,7 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
@@ -141,6 +143,20 @@ public class TrackBlocks {
             REGISTRATE.block("small_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.SMALL_SIMPLE_WHEEL))
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
+                    .transform(pickaxeOnly())
+                    .blockstate(BlockStateGen.horizontalBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
+
+    public static final BlockEntry<OleoWheelBlock> OLEO_WHEEL =
+            REGISTRATE.block("oleo_wheel", p -> new OleoWheelBlock(p, TrackBlockEntityTypes.OLEO_WHEEL))
+                    .properties(p -> p
+                            .noOcclusion()
+                            .mapColor(MapColor.PODZOL)
+                            .strength(7.0f)
+                            .sound(SoundType.METAL)
+                            .pushReaction(PushReaction.NORMAL))
                     .transform(pickaxeOnly())
                     .blockstate(BlockStateGen.horizontalBlockProvider(true))
                     .item()

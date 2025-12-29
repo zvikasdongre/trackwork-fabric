@@ -21,6 +21,10 @@ public class TrackworkPartialModels {
             SIMPLE_WHEEL_RIB_UPPER = block("partial/simple_wheel_rib_upper"),
             SIMPLE_WHEEL_SPRING_BASE = block("partial/simple_wheel_spring_base"),
             SIMPLE_WHEEL_SPRING_COIL = block("partial/simple_wheel_spring_coil"),
+            OLEO_WHEEL_SINGLE = block("oleo_wheel_single"),
+            OLEO_WHEEL_TWIN = block("oleo_wheel_twin"),
+            OLEO_STRUT_UPPER = block("partial/oleo_strut_upper"),
+            OLEO_STRUT_LOWER = block("partial/oleo_strut_lower"),
             HORN_PIPE = block("partial/horn_pipe");
 
     private static PartialModel block(String path) {

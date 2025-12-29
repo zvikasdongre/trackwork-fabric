@@ -5,6 +5,7 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
+import edn.stratodonut.trackwork.tracks.forces.OleoWheelController;
 import edn.stratodonut.trackwork.tracks.forces.PhysEntityTrackController;
 import edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController;
 import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
@@ -65,6 +66,12 @@ public class TrackworkMod
 
         VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
                 .newAttachmentRegistrationBuilder(SimpleWheelController.class)
+                .useLegacySerializer()
+                .build()
+        );
+
+        VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
+                .newAttachmentRegistrationBuilder(OleoWheelController.class)
                 .useLegacySerializer()
                 .build()
         );

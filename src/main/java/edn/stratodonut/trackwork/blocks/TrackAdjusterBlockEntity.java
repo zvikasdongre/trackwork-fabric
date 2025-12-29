@@ -2,6 +2,7 @@ package edn.stratodonut.trackwork.blocks;
 
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
+import edn.stratodonut.trackwork.tracks.forces.OleoWheelController;
 import edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController;
 import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
 import net.minecraft.core.BlockPos;
@@ -47,6 +48,9 @@ public class TrackAdjusterBlockEntity extends KineticBlockEntity {
 
             SimpleWheelController controller2 = SimpleWheelController.getOrCreate(ship);
             controller2.adjustSuspension(vec);
+
+            OleoWheelController controller3 = OleoWheelController.getOrCreate(ship);
+            controller3.adjustSuspension(vec);
         }
     }
 }
