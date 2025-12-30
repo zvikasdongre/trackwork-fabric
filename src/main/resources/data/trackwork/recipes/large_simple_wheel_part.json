@@ -13,11 +13,11 @@
       "item": "create:cogwheel"
     },
     "K": {
-      "item": "minecraft:dried_kelp"
+      "item": "minecraft:dried_kelp_block"
     }
   },
   "result": {
-    "item": "trackwork:simple_wheel_part",
+    "item": "trackwork:large_simple_wheel_part",
     "count": 2
   }
 }

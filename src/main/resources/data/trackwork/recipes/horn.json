@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBN",
+    " A "
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "N": {
+      "item": "minecraft:note_block"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "result": {
+    "item": "trackwork:horn",
+    "count": 1
+  }
+}

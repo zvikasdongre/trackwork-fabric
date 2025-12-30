@@ -13,14 +13,14 @@
       "item": "create:gearbox"
     },
     "W": {
-      "item": "trackwork:med_simple_wheel_part"
+      "item": "trackwork:small_simple_wheel_part"
     },
     "S": {
       "item": "create:mechanical_piston"
     }
   },
   "result": {
-    "item": "trackwork:med_simple_wheel",
+    "item": "trackwork:small_simple_wheel",
     "count": 1
   }
 }
