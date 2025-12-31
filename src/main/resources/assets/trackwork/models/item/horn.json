@@ -1,5 +1,5 @@
 {
-  "loader": "forge:obj",
+  "porting_lib:loader": "porting_lib:obj",
   "model": "trackwork:models/item/horn.obj",
   "textures": {
   "0": "trackwork:block/horn",
