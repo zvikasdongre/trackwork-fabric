@@ -29,6 +29,8 @@ public class TrackSounds {
     public static final SoundEvent WHEEL_AMBIENT_GROUND_2 = registerSound("wheel_ambient_ground_2");
     public static final SoundEvent WHEEL_GROUND_SLIP = registerSound("wheel_ground_slip");
 
+    public static final SoundEvent HORN = registerSound("honk");
+
     private static SoundEvent registerSound(String id) {
         ResourceLocation identifier = new ResourceLocation(TrackworkMod.MOD_ID, id);
         ;

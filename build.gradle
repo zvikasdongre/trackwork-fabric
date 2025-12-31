@@ -1,5 +1,5 @@
 plugins {
-  id 'fabric-loom' version '1.6-SNAPSHOT'
+  id 'fabric-loom' version '1.10-SNAPSHOT'
   id 'maven-publish'
 }
 
@@ -14,12 +14,24 @@ repositories {
   maven { url = "https://maven.shedaniel.me/" } // Cloth Config, REI
   maven { url = "https://api.modrinth.com/maven" } // LazyDFU
   maven { url = "https://maven.terraformersmc.com/releases/" } // Mod Menu
-  maven { url = "https://mvn.devos.one/snapshots/" } // Create, Porting Lib, Forge Tags, Milk Lib, Registrate
-  maven { url = "https://mvn.devos.one/releases/" } // Porting Lib Releases
+
+  maven { url = "https://maven.createmod.net" } // Ponder, Flywheel
+  maven {
+      name = "create maven"
+      url = "https://maven.tterrag.com/"
+      content {
+          includeGroup("com.simibubi.create")
+          includeGroup("com.jozufozu.flywheel")
+          includeGroup("com.tterrag.registrate")
+      }
+  }
+
+  maven { url = "https://mvn.devos.one/releases/" } // Porting Lib
+  maven { url = "https://mvn.devos.one/snapshots/" } // Create Fabric, Registrate, Milk Lib
+
   maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // Forge Config API Port
   maven { url = "https://maven.jamieswhiteshirt.com/libs-release" } // Reach Entity Attributes
   maven { url = "https://jitpack.io/" } // Mixin Extras, Fabric ASM
-  maven { url = "https://maven.tterrag.com/" } // Flywheel
 
   maven {
     name = "Valkyrien Skies Internal"
@@ -41,7 +53,7 @@ dependencies {
   modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
   // Create - dependencies are added transitively
-  modImplementation("com.simibubi.create:create-fabric-${project.minecraft_version}:${project.create_version}")
+  modImplementation("com.simibubi.create:create-fabric:${project.create_version}")
 
   // Development QOL
   modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
@@ -57,12 +69,11 @@ dependencies {
   modApi("org.valkyrienskies:valkyrienskies-120-fabric:${project.vs2_version}") { transitive = false }
 
   modApi("org.valkyrienskies.core:api:${project.vs_core_version}")
-  modApi("org.valkyrienskies.core:api-game:${project.vs_core_version}")
   modApi("org.valkyrienskies.core:util:${project.vs_core_version}")
-  modApi("org.valkyrienskies.core:impl:${project.vs_core_version}")
+  modApi("org.valkyrienskies.core:internal:${project.vs_core_version}")
 
-  // Porting Lib - Config module
-  modImplementation("io.github.fabricators_of_create.Porting-Lib:config:${project.portinglib_config_version}")
+//   // Porting Lib - Config module
+//   modImplementation("io.github.fabricators_of_create.Porting-Lib:config:${project.portinglib_config_version}")
 }
 
 processResources {

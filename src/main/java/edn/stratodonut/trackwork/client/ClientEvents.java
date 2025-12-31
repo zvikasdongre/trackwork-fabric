@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.server.packs.PackType;
 
-import static com.jozufozu.flywheel.backend.Backend.isGameActive;
+import dev.engine_room.flywheel.api.backend.BackendManager;
 
 public class ClientEvents {
     public static final IdentifiableResourceReloadListener RESOURCE_RELOAD_LISTENER = new ClientResourceReloadListener();
@@ -15,7 +15,7 @@ public class ClientEvents {
     public static void init() {
         // Register client tick event
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (!isGameActive())
+            if (!BackendManager.isBackendOn())
                 return;
 
             ClientLevel world = client.level;

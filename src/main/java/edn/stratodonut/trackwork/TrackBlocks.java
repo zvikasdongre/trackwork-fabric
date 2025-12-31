@@ -1,16 +1,18 @@
 package edn.stratodonut.trackwork;
 
-import com.simibubi.create.AllShapes;
-import com.simibubi.create.foundation.data.BlockStateGen;
-import com.simibubi.create.foundation.data.SharedProperties;
-import edn.stratodonut.trackwork.blocks.TrackAdjusterBlock;
-import edn.stratodonut.trackwork.tracks.blocks.*;
 import com.simibubi.create.AllCreativeModeTabs;
-import com.simibubi.create.content.kinetics.BlockStressDefaults;
+import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.kinetics.chainDrive.ChainDriveGenerator;
 import com.simibubi.create.content.kinetics.simpleRelays.BracketedKineticBlockModel;
+import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import edn.stratodonut.trackwork.blocks.HornBlock;
+import edn.stratodonut.trackwork.blocks.TrackAdjusterBlock;
+import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlock;
+import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock;
+import edn.stratodonut.trackwork.tracks.blocks.WheelBlock;
 import edn.stratodonut.trackwork.tracks.blocks.variants.LargePhysEntityTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.variants.LargeSuspensionTrackBlock;
 import edn.stratodonut.trackwork.tracks.blocks.variants.MedPhysEntityTrackBlock;
@@ -21,17 +23,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.level.material.MapColor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
-
-import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
-import static edn.stratodonut.trackwork.TrackworkMod.REGISTRATE;
 import static com.simibubi.create.foundation.data.ModelGen.customItemModel;
+import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
+import static edn.stratodonut.trackwork.TrackworkMod.REGISTRATE;
 
 public class TrackBlocks {
     static {
@@ -45,7 +45,6 @@ public class TrackBlocks {
             REGISTRATE.block("large_suspension_track", LargeSuspensionTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(12.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -56,7 +55,6 @@ public class TrackBlocks {
             REGISTRATE.block("med_suspension_track", MedSuspensionTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(12.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
 //                    .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
 //                            .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -67,7 +65,6 @@ public class TrackBlocks {
             REGISTRATE.block("suspension_track", SuspensionTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(12.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -79,7 +76,6 @@ public class TrackBlocks {
             REGISTRATE.block("large_phys_track", LargePhysEntityTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(14.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -91,7 +87,6 @@ public class TrackBlocks {
             REGISTRATE.block("med_phys_track", MedPhysEntityTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(14.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
 //                    .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
 //                            .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -103,7 +98,6 @@ public class TrackBlocks {
             REGISTRATE.block("phys_track", PhysEntityTrackBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(14.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate((c, p) -> new ChainDriveGenerator((state, suffix) -> p.models()
                             .getExistingFile(p.modLoc("block/" + c.getName() + "/" + suffix))).generate(c, p))
@@ -112,11 +106,21 @@ public class TrackBlocks {
                     .transform(customItemModel())
                     .register();
 
+
+    public static final BlockEntry<WheelBlock> LARGE_SIMPLE_WHEEL =
+            REGISTRATE.block("large_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.LARGE_SIMPLE_WHEEL))
+                    .initialProperties(() -> Blocks.RAIL)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
+                    .transform(pickaxeOnly())
+                    .blockstate(BlockStateGen.horizontalBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
+
     public static final BlockEntry<WheelBlock> SIMPLE_WHEEL =
             REGISTRATE.block("simple_wheel", WheelBlock::new)
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate(BlockStateGen.horizontalBlockProvider(true))
                     .item()
@@ -127,26 +131,26 @@ public class TrackBlocks {
             REGISTRATE.block("med_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.MED_SIMPLE_WHEEL))
                     .initialProperties(() -> Blocks.RAIL)
                     .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
-                    .transform(BlockStressDefaults.setNoImpact())
                     .transform(pickaxeOnly())
                     .blockstate(BlockStateGen.horizontalBlockProvider(true))
                     .item()
                     .transform(customItemModel())
                     .register();
 
-    public static final BlockEntry<? extends RotatedPillarBlock> SIMPLE_WHEEL_PART = wheelpart("simple_wheel_part");
-    public static final BlockEntry<? extends RotatedPillarBlock> MED_SIMPLE_WHEEL_PART = wheelpart("med_simple_wheel_part");
-
-    public static final BlockEntry<TrackAdjusterBlock> TRACK_LEVEL_CONTROLLER =
-            REGISTRATE.block("track_level_controller", TrackAdjusterBlock::new)
-                    .initialProperties(SharedProperties::stone)
-                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
-                    .transform(BlockStressDefaults.setNoImpact())
-                    .transform(axeOrPickaxe())
-                    .blockstate(BlockStateGen.axisBlockProvider(true))
+    public static final BlockEntry<WheelBlock> SMALL_SIMPLE_WHEEL =
+            REGISTRATE.block("small_simple_wheel", p -> new WheelBlock(p, TrackBlockEntityTypes.SMALL_SIMPLE_WHEEL))
+                    .initialProperties(() -> Blocks.RAIL)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().strength(7.0f).sound(SoundType.METAL))
+                    .transform(pickaxeOnly())
+                    .blockstate(BlockStateGen.horizontalBlockProvider(true))
                     .item()
                     .transform(customItemModel())
                     .register();
+
+    public static final BlockEntry<? extends RotatedPillarBlock> LARGE_SIMPLE_WHEEL_PART = wheelpart("large_simple_wheel_part");
+    public static final BlockEntry<? extends RotatedPillarBlock> SIMPLE_WHEEL_PART = wheelpart("simple_wheel_part");
+    public static final BlockEntry<? extends RotatedPillarBlock> MED_SIMPLE_WHEEL_PART = wheelpart("med_simple_wheel_part");
+    public static final BlockEntry<? extends RotatedPillarBlock> SMALL_SIMPLE_WHEEL_PART = wheelpart("small_simple_wheel_part");
 
     public static BlockEntry<? extends RotatedPillarBlock> wheelpart(String name) {
         return REGISTRATE.block(name, (properties) -> new RotatedPillarBlock(properties) {
@@ -161,6 +165,26 @@ public class TrackBlocks {
                 .transform(customItemModel())
                 .register();
     }
+
+    public static final BlockEntry<TrackAdjusterBlock> TRACK_LEVEL_CONTROLLER =
+            REGISTRATE.block("track_level_controller", TrackAdjusterBlock::new)
+                    .initialProperties(SharedProperties::stone)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL))
+                    .transform(axeOrPickaxe())
+                    .blockstate(BlockStateGen.axisBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
+
+    public static final BlockEntry<HornBlock> HORN =
+            REGISTRATE.block("horn", HornBlock::new)
+                    .initialProperties(SharedProperties::copperMetal)
+                    .properties(p -> p.noOcclusion().mapColor(MapColor.PODZOL).noCollission().sound(SoundType.METAL))
+                    .transform(axeOrPickaxe())
+                    .blockstate(BlockStateGen.directionalBlockProvider(true))
+                    .item()
+                    .transform(customItemModel())
+                    .register();
     
     public static void register() {}
 }

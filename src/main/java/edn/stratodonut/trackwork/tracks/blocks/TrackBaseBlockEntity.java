@@ -2,13 +2,13 @@ package edn.stratodonut.trackwork.tracks.blocks;
 
 import com.mojang.datafixers.util.Pair;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.foundation.utility.Iterate;
 import edn.stratodonut.trackwork.TrackPackets;
 import edn.stratodonut.trackwork.TrackworkUtil;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.TrackPart;
 import edn.stratodonut.trackwork.tracks.network.ThrowTrackPacket;
 import edn.stratodonut.trackwork.tracks.render.TrackBeltRenderer;
+import net.createmod.catnip.data.Iterate;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -18,19 +18,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
 
 import javax.annotation.Nullable;
 
 import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock.AXIS;
-import static edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlock.WHEEL_VARIANT;
 import static edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.PART;
 
 public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements ITrackPointProvider {
@@ -38,6 +34,7 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
     public TrackBaseBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
         setLazyTickRate(10);
+        super.stress = 0;
     }
 
     @Override
@@ -95,7 +92,7 @@ public abstract class TrackBaseBlockEntity extends KineticBlockEntity implements
         Direction next = Direction.get(Direction.AxisDirection.POSITIVE, TrackworkUtil.around(state.getValue(AXIS)));
 
         int offset = forward ? 1 : -1;
-        if (part == TrackPart.END && forward || part == TrackPart.START && !forward)
+        if (part == TrackPart.end && forward || part == TrackPart.start && !forward)
             return null;
         pos = pos.relative(next, offset);
         return pos;

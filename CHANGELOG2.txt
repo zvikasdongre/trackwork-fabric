@@ -131,9 +131,15 @@
     Changed some art assets credits to Kipti
 * 1.1.1b
     Tweak for a sound being too soft
-
- TODO:
-  - Fix sprocket torque once and for all
-  - [URGENT] FIX FLYWHEEL VERSION RANGE ON 1.18.2
-  - [URGENT] FIX UNKNOWN DATA ISSUE (SEE GITHUB ISSUES)
+* 1.2.0
+    - Updated for VS 2.4, no longer compatible with VS 2.3!
+    - Added car horn
+    - Added new wheel variants, models
+    - Added freespin resistance (no longer perpetual motion :< )
+    - Fixed sprocket collision in certain directions - should now climb well
+    - Significantly improve physics, including suspension dynamics
+    - Improved contact with multiple contact points
+* 1.2.1
+    - Fix major issues with sprockets not cleaning up their wheel entities
+    - Fix wheel raycasts hitting their own ship
 

@@ -1,73 +1,73 @@
 package edn.stratodonut.trackwork.tracks.blocks;
 
-import com.mojang.datafixers.util.Pair;
-import com.simibubi.create.foundation.sound.SoundScapes;
-import com.simibubi.create.foundation.utility.Lang;
 import edn.stratodonut.trackwork.*;
 import edn.stratodonut.trackwork.sounds.TrackSoundScapes;
 import edn.stratodonut.trackwork.tracks.ITrackPointProvider;
-import edn.stratodonut.trackwork.tracks.TrackBeltEntity;
 import edn.stratodonut.trackwork.tracks.data.PhysEntityTrackData;
 import edn.stratodonut.trackwork.tracks.forces.PhysEntityTrackController;
-import edn.stratodonut.trackwork.tracks.render.TrackBeltRenderer;
 import edn.stratodonut.trackwork.wheel.WheelEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
-import org.valkyrienskies.core.apigame.constraints.VSAttachmentConstraint;
-import org.valkyrienskies.core.apigame.constraints.VSConstraintAndId;
-import org.valkyrienskies.core.apigame.constraints.VSHingeOrientationConstraint;
-import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
+import org.valkyrienskies.core.internal.joints.*;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityData;
 import org.valkyrienskies.core.impl.game.ships.ShipTransformImpl;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityServer;
+import org.valkyrienskies.mod.api.ValkyrienSkies;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
-import org.valkyrienskies.mod.common.util.VectorConversionsMCKt;
+import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock.AXIS;
 import static edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock.*;
 import static net.minecraft.ChatFormatting.GRAY;
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toJOML;
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements ITrackPointProvider {
     private float wheelRadius;
     protected final Supplier<Ship> ship;
+    @Deprecated(forRemoval = true)
     private Integer trackID;
-    private UUID wheelID;
-    @NotNull
-    private WeakReference<WheelEntity> wheel;
-    public boolean assembled;
+    @Nullable
+    private Long wheelId;
+    private boolean assembled;
     public boolean assembleNextTick = true;
+    MutableComponent chatMessage = MutableComponent.create(ComponentContents.EMPTY);
 
     public PhysEntityTrackBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.assembled = false;
         this.wheelRadius = 0.5f;
         this.ship = () -> VSGameUtilsKt.getShipObjectManagingPos(this.level, pos);
-        this.wheel = new WeakReference<>(null);
+        this.wheelId = null;
     }
 
     public static PhysEntityTrackBlockEntity large(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -87,11 +87,12 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         super.destroy();
 
         if (this.level != null && !this.level.isClientSide && this.assembled) {
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
-                controller.removeTrackBlock((ServerLevel) this.level, this.trackID);
-                Objects.requireNonNull(this.wheel.get()).kill();
+                controller.removeTrackBlock((ServerLevel) this.level, this.getBlockPos());
+
+                this.cleanupWheel();
             }
         }
     }
@@ -101,107 +102,89 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         super.onLoad();
 
         if (!this.level.isClientSide && this.assembled) {
-            Entity e = ((ServerLevel) this.level).getEntity(this.wheelID);
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
-                if (e instanceof WheelEntity wheel) {
-                    if (this.constrainWheel(ship, wheel.getShipId(), toJOML(Vec3.atCenterOf(this.getBlockPos()))) != null)
-                        return;
-                    this.wheel = new WeakReference<>(wheel);
+                if (this.wheelId != null && WheelEntity.aliveInLevel((ServerLevel) this.level, this.wheelId)) {
+                    this.asyncConstrainWheel(ship, this.wheelId, toJOML(Vec3.atCenterOf(this.getBlockPos())));
                 } else {
                     this.assemble();
-                    return;
                 }
+                return;
             }
 
-            this.assembled = false;
+            this.disassemble();
             this.assembleNextTick = true;
         }
-    }
-
-    @Deprecated
-    public boolean summonBelt() {
-        if (!this.level.isClientSide) {
-            TrackBeltEntity e = TrackBeltEntity.create(this.level, this.getBlockPos());
-            e.setPos(Vec3.atLowerCornerOf(this.getBlockPos()));
-            this.level.addFreshEntity(e);
-        }
-
-        return true;
     }
 
     private void assemble() {
         if (this.level != null && !this.level.isClientSide) {
             if (!isValidAxis(this.getBlockState().getValue(AXIS))) return;
             ServerLevel slevel = (ServerLevel) this.level;
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
-                if (this.assembled) {
-                    controller.removeTrackBlock((ServerLevel) this.level, this.trackID);
+                if (this.getAssembled()) {
+                    this.disassemble();
+                    controller.removeTrackBlock((ServerLevel) this.level, this.getBlockPos());
                 }
                 this.assembled = true;
                 Vector3dc trackLocalPos = toJOML(Vec3.atCenterOf(this.getBlockPos()));
 
-                WheelEntity wheel = TrackEntityTypes.WHEEL.create(slevel);
                 long wheelId = VSGameUtilsKt.getShipObjectWorld(slevel).allocateShipId(VSGameUtilsKt.getDimensionId(slevel));
                 double wheelRadius = this.wheelRadius;
-//                Vector3dc wheelOffset = ship.getTransform().getShipToWorldRotation().transform(UP.negate(new Vector3d()));
                 Vector3dc wheelGlobalPos = ship.getTransform().getShipToWorld().transformPosition(trackLocalPos, new Vector3d());
 
                 ShipTransform transform = ShipTransformImpl.Companion.create(wheelGlobalPos, new Vector3d());
-                PhysicsEntityData wheelData = WheelEntity.DataBuilder.createBasicData(wheelId, transform, wheelRadius, 1000);
-                wheel.setPhysicsEntityData(wheelData);
-                wheel.setPos(VectorConversionsMCKt.toMinecraft(wheelGlobalPos));
-                slevel.addFreshEntity(wheel);
+                PhysicsEntityData wheelData = WheelEntity.DataBuilder.createBasicData(wheelId, transform, 0.5, 200);
+                WheelEntity.createInLevel(slevel, wheelData);
+                ValkyrienSkiesMod.getOrCreateGTPA(ValkyrienSkies.getDimensionId(level)).disableCollisionBetween(wheelId, ship.getId());
 
-                PhysEntityTrackData.CreateData createData = this.constrainWheel(ship, wheelId, trackLocalPos);
-                this.trackID = controller.addTrackBlock(createData);
-                this.wheelID = wheel.getUUID();
-                this.wheel = new WeakReference<>(wheel);
+                this.asyncConstrainWheel(ship, wheelId, trackLocalPos);
+                this.wheelId = wheelId;
                 this.sendData();
             }
         }
     }
 
-    private PhysEntityTrackData.CreateData constrainWheel(ServerShip ship, long wheelId, Vector3dc trackLocalPos) {
+    public void disassemble() {
+        this.assembled = false;
+        cleanupWheel();
+    }
+
+    /***
+     * Constraint creation and Attachment is queued onto the physics backend, hence async
+     */
+    private void asyncConstrainWheel(LoadedServerShip ship, long wheelId, Vector3dc trackLocalPos) {
         ServerLevel slevel = (ServerLevel) this.level;
         double attachCompliance = 1e-8;
-        double attachMaxForce = 1e150;
-        double hingeMaxForce = 1e75;
+        double attachMaxForce = 1e50;
+        double hingeMaxForce = 1e25;
         Vector3dc axis = TrackworkUtil.getAxisAsVec(this.getBlockState().getValue(AXIS));
-//                VSSlideConstraint slider = new VSSlideConstraint(
-//                        ship.getId(),
-//                        wheelId,
-//                        attachCompliance,
-//                        trackLocalPos,
-//                        new Vector3d(0, 0, 0),
-//                        attachMaxForce,
-//                        UP,
-//                        SUSPENSION_TRAVEL
-//                );
-        VSAttachmentConstraint slider = new VSAttachmentConstraint(
-                ship.getId(),
-                wheelId,
-                attachCompliance,
-                trackLocalPos,
-                new Vector3d(0, 0, 0),
-                attachMaxForce,
-                0.0
-        );
-        VSHingeOrientationConstraint axle = new VSHingeOrientationConstraint(
-                ship.getId(),
-                wheelId,
-                attachCompliance,
-                new Quaterniond().fromAxisAngleDeg(axis, 0),
-                new Quaterniond().fromAxisAngleDeg(new Vector3d(0, 0, 1), 0),
-                hingeMaxForce
-        );
 
+        // According to Triode's comment in org.valkyrienskies.mod.common.block.TestHingeBlock
+        // Hinge constraints will attempt to align the X-axes of both bodies, so to align the Z axis we
+        // apply this rotation to the X-axis
+        Quaterniond hingeOrientation = new Quaterniond();
+        if (this.getBlockState().getValue(AXIS) == Direction.Axis.Z) {
+            hingeOrientation = hingeOrientation.rotateLocalY(Math.PI/2);
+        }
 
-        Integer sliderId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(slider);
-        Integer axleId = VSGameUtilsKt.getShipObjectWorld(slevel).createNewConstraint(axle);
-        if (sliderId == null || axleId == null) return null;
+        VSRevoluteJoint axle = new VSRevoluteJoint(
+                ship.getId(),
+                new VSJointPose(trackLocalPos, hingeOrientation),
+                wheelId,
+                new VSJointPose(
+                        new Vector3d(0.5, 0.5, 0.5),
+                        new Quaterniond()),
+                new VSJointMaxForceTorque((float) attachMaxForce, (float) hingeMaxForce),
+                attachCompliance,
+                null,
+                null,
+                null,
+                null,
+                true
+        );
 
         PhysEntityTrackData.CreateData trackData = new PhysEntityTrackData.CreateData(
                 trackLocalPos,
@@ -209,20 +192,34 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
                 wheelId,
                 0,
                 0,
-                new VSConstraintAndId(sliderId, slider),
-                new VSConstraintAndId(axleId, axle),
+                axle,
                 this.getSpeed()
         );
-        return trackData;
+
+        ValkyrienSkiesMod.getOrCreateGTPA(ValkyrienSkies.getDimensionId(slevel)).addJoint(
+                axle,
+                0,
+                (id) -> PhysEntityTrackController.getOrCreate(ship).addTrackBlock(this.getBlockPos(), trackData, id)
+        );
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        if (this.ship.get() != null && this.assembleNextTick && !this.assembled && this.level != null) {
-            this.assemble();
-            this.assembleNextTick = false;
+        // For backwards compatibility
+        if (this.trackID != null) {
+            this.assembled = false;
+            this.trackID = null;
+        }
+
+        if (this.ship.get() != null && !this.assembled && this.level != null) {
+            if (this.assembleNextTick) {
+                this.assemble();
+                this.assembleNextTick = false;
+            } else {
+                this.assembleNextTick = true;
+            }
             return;
         }
 
@@ -230,35 +227,43 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
             return;
         }
         if (this.assembled && !this.level.isClientSide) {
-            ServerShip ship = (ServerShip) this.ship.get();
+            LoadedServerShip ship = (LoadedServerShip) this.ship.get();
             if (ship != null) {
-                WheelEntity wheel = this.wheel.get();
-                if (wheel == null || !wheel.isAlive() || wheel.isRemoved()) {
+                boolean isWheelAlive = this.wheelId != null && WheelEntity.aliveInLevel((ServerLevel) this.level, this.wheelId);
+                if (!isWheelAlive) {
                     this.assemble();
-                    wheel = this.wheel.get();
                 } else {
-                    double distance = ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos())))
-                            .distance(toJOML(wheel.position()));
-                    if (distance > 8f) {
-                        this.assemble();
-                        wheel = this.wheel.get();
-                    };
+                    PhysicsEntityServer wheel = WheelEntity.getInLevel((ServerLevel) this.level, this.wheelId);
+                    Vector3dc idealPos = ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos())));
+
+                    double distance = idealPos.distance(wheel.getShipTransform().getPositionInWorld());
+                    if (distance > 2f) {
+                        WheelEntity.moveTo((ServerLevel) this.level, this.wheelId, idealPos);
+                    }
                 }
-                if (wheel == null) {
+                if (this.wheelId == null || !WheelEntity.aliveInLevel((ServerLevel) this.level, this.wheelId)) {
                     TrackworkMod.warn("Wheel is NULL after assembly! At {}", this.getBlockPos().toString());
                     return;
                 }
-                wheel.keepAlive();
 
                 PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate(ship);
                 PhysEntityTrackData.UpdateData data = new PhysEntityTrackData.UpdateData(
                         0,
                         0,
-                        this.getSpeed()
+                        this.getSpeed(),
+                        this.wheelId
                 );
-                controller.updateTrackBlock(this.trackID, data);
+                controller.updateTrackBlock(this.getBlockPos(), data);
 
-//                shipMass = (float) ship.getInertiaData().getMass();
+                // Entity pushing, no damage here
+                List<LivingEntity> hits = this.level.getEntitiesOfClass(LivingEntity.class, new AABB(this.getBlockPos())
+                        .deflate(0.25)
+                );
+                Vec3 worldPos = toMinecraft(ship.getShipToWorld().transformPosition(toJOML(Vec3.atCenterOf(this.getBlockPos()))));
+                for (LivingEntity e : hits) {
+                    SuspensionTrackBlockEntity.push(e, worldPos);
+                    if (e instanceof ServerPlayer p) p.connection.send(new ClientboundSetEntityMotionPacket(p));
+                }
             }
         }
     }
@@ -271,6 +276,16 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
         if (spd < 8)
             return;
         TrackSoundScapes.play(TrackAmbientGroups.TRACK_SPROCKET_AMBIENT, worldPosition, pitch);
+    }
+
+    public boolean getAssembled() {
+        return assembled;
+    }
+
+    public void cleanupWheel() {
+        if (this.wheelId != null) {
+            WheelEntity.removeInLevel((ServerLevel) this.level, this.wheelId);
+        }
     }
 
 //    @Override
@@ -286,17 +301,15 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
 //    }
 
     public void addMassStats(List<Component> tooltip, float mass) {
-        Lang.text("Total Mass")
-                .style(GRAY)
-                .forGoggles(tooltip);
+        Component.literal("Total Mass")
+                .withStyle(GRAY);
 
-        Lang.number(mass)
-                .text(" kg")
-                .style(ChatFormatting.WHITE)
+        Component.literal(String.valueOf(mass))
+                .append(" kg")
+                .withStyle(ChatFormatting.WHITE);
 //                .space()
 //                .add(Lang.translate("gui.goggles.at_current_speed")
 //                        .style(ChatFormatting.DARK_GRAY))
-                .forGoggles(tooltip, 1);
     }
 
     @Override
@@ -334,14 +347,15 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     @Override
     public float getSpeed() {
         if (!assembled) return 0;
-        return Math.min(super.getSpeed(), TrackworkConfigs.maxRPM.get());
+        float maxRpm = TrackworkConfigs.maxRPM.get();
+        return Math.clamp(-maxRpm, maxRpm, super.getSpeed());
     }
 
     @Override
     public void write(CompoundTag compound, boolean clientPacket) {
         compound.putBoolean("Assembled", this.assembled);
         if (this.trackID != null) compound.putInt("trackBlockID", this.trackID);
-        if (this.wheelID != null) compound.putUUID("wheelID", this.wheelID);
+        if (this.wheelId != null) compound.putLong("wheelId", this.wheelId);
         super.write(compound, clientPacket);
     }
 
@@ -349,14 +363,14 @@ public class PhysEntityTrackBlockEntity extends TrackBaseBlockEntity implements 
     protected void read(CompoundTag compound, boolean clientPacket) {
         this.assembled = compound.getBoolean("Assembled");
         if (this.trackID == null && compound.contains("trackBlockID")) this.trackID = compound.getInt("trackBlockID");
-        if (this.wheelID == null && compound.hasUUID("wheelID")) this.wheelID = compound.getUUID("wheelID");
+        if (this.wheelId == null && compound.contains("wheelId")) this.wheelId = compound.getLong("wheelId");
         super.read(compound, clientPacket);
     }
 
     @Override
     public float calculateStressApplied() {
         if (this.level.isClientSide || !TrackworkConfigs.enableStress.get() ||
-                !this.assembled || this.getBlockState().getValue(PART) != TrackPart.START) return super.calculateStressApplied();
+                !this.assembled || this.getBlockState().getValue(PART) != TrackPart.start) return super.calculateStressApplied();
 
         Ship ship = this.ship.get();
         if (ship == null) return super.calculateStressApplied();

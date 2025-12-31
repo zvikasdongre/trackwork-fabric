@@ -20,6 +20,10 @@ public class TrackworkConfigs {
     public static final ForgeConfigSpec.IntValue wheelPairDist = SERVER_BUILDER
             .comment("The max distance between wheels where steering, etc. will be paired")
             .defineInRange("wheelPairDistance", 7, 5, 15);
+    public static final ForgeConfigSpec.BooleanValue wheelRPMPassthrough = SERVER_BUILDER
+            .comment("Allow wheels to transmit RPM through them when connected to kinetic network")
+            .define("wheelRPMPassthrough", true);
+
     static final ForgeConfigSpec SERVER_SPEC = SERVER_BUILDER.build();
 
     // Client Configs

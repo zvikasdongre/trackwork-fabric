@@ -1,90 +1,104 @@
 package edn.stratodonut.trackwork.tracks.data;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import edn.stratodonut.trackwork.TrackworkUtil;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.util.PhysTickOnly;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 @JsonAutoDetect(
         fieldVisibility = JsonAutoDetect.Visibility.ANY
 )
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PhysTrackData {
+    public final Long blockPos;
+
+    public final Direction.Axis wheelAxis;
+    public final float horizontalOffset;
+
+    public final double wheelRadius;
+    public final boolean inWater;
+
+    @PhysTickOnly
+    public Vector3dc lastSuspensionForce;
+    public final double effectiveSuspensionTravel;
+
+    public final float trackRPM;
+
+    @Deprecated
     public final Vector3dc trackOriginPosition;
-    public final Vector3dc trackContactPosition;
-    public final Vector3dc trackSpeed;
-    public final Vector3dc trackNormal;
-    public final Vector3dc suspensionCompression;
-    @Nullable
-    public Long groundShipId;
-    private Vector3dc suspensionCompressionDelta;
-    public final boolean istrackGrounded;
-    public float trackRPM;
 
     public float trackSU;
 
     // For Jackson serialisation
     private PhysTrackData() {
-        this(null);
+        this(BlockPos.ZERO);
     }
 
-    private PhysTrackData(Vector3dc trackOriginPosition) {
-        this.trackOriginPosition = trackOriginPosition;
-        this.trackContactPosition = new Vector3d(0);
-        this.trackSpeed = new Vector3d(0);
-        this.trackNormal = new Vector3d(0, -1, 0);
-        this.suspensionCompression = new Vector3d(0);
-        this.suspensionCompressionDelta = new Vector3d(0);
-        this.istrackGrounded = false;
+    private PhysTrackData(BlockPos trackPos) {
+        this.trackOriginPosition = new Vector3d();
+        this.lastSuspensionForce = new Vector3d();;
+        this.blockPos = trackPos.asLong();
+        this.wheelAxis = Direction.Axis.X;
+        this.horizontalOffset = 0;
+        this.effectiveSuspensionTravel = 0;
+        this.wheelRadius = 0;
+        this.inWater = false;
         this.trackRPM = 0;
     }
 
-    public PhysTrackData(Vector3dc trackOriginPosition, Vector3dc trackContactPosition, Vector3dc trackSpeed, Vector3dc trackNormal,
-                         Vector3dc suspensionCompression, Vector3dc suspensionCompressionDelta,
-                         @Nullable Long groundShipId, boolean istrackGrounded, float trackRPM) {
-        this.trackOriginPosition = trackOriginPosition;
-        this.trackContactPosition = trackContactPosition;
-        this.trackSpeed = trackSpeed;
-        this.trackNormal = trackNormal;
-        this.suspensionCompression = suspensionCompression;
-        this.suspensionCompressionDelta = suspensionCompressionDelta;
-        this.groundShipId = groundShipId;
-        this.istrackGrounded = istrackGrounded;
+    public PhysTrackData(Vector3dc lastSuspensionForce, BlockPos pos, Direction.Axis wheelAxis, float horizontalOffset,
+                         double effectiveSuspensionTravel, double wheelRadius, boolean inWater, float trackRPM) {
+        this.lastSuspensionForce = lastSuspensionForce;
+        this.trackOriginPosition = new Vector3d();
+        this.blockPos = pos.asLong();
+        this.wheelAxis = wheelAxis;
+        this.horizontalOffset = horizontalOffset;
+        this.effectiveSuspensionTravel = effectiveSuspensionTravel;
+        this.wheelRadius = wheelRadius;
+        this.inWater = inWater;
         this.trackRPM = trackRPM;
     }
 
     public final PhysTrackData updateWith(PhysTrackUpdateData update) {
+        // Backwards compat
+        if (!trackOriginPosition.equals(TrackworkUtil.ZERO)) {
+            return new PhysTrackData(
+                    this.lastSuspensionForce,
+                    BlockPos.containing(toMinecraft(trackOriginPosition)),
+                    update.wheelAxis,
+                    update.horizontalOffset,
+                    update.effectiveSuspensionTravel,
+                    update.wheelRadius,
+                    update.inWater,
+                    update.trackRPM
+            );
+        }
+
         return new PhysTrackData(
-                this.trackOriginPosition,
-                update.trackContactPosition,
-                update.trackSpeed,
-                update.trackNormal,
-                update.suspensionCompression,
-                update.suspensionCompression.sub(this.suspensionCompression, new Vector3d()).div(20, new Vector3d()),
-                update.groundShipId,
-                update.trackHit,
+                this.lastSuspensionForce,
+                BlockPos.of(this.blockPos),
+                update.wheelAxis,
+                update.horizontalOffset,
+                update.effectiveSuspensionTravel,
+                update.wheelRadius,
+                update.inWater,
                 update.trackRPM
         );
     }
 
     public static PhysTrackData from(PhysTrackCreateData data) {
-        return new PhysTrackData(data.trackOriginPosition);
+        return new PhysTrackData(data.blockPos);
     }
 
-    @Nonnull
-    public Vector3dc getSuspensionCompressionDelta() {
-        return suspensionCompressionDelta;
+    public record PhysTrackUpdateData(Direction.Axis wheelAxis, float horizontalOffset,
+                                      double effectiveSuspensionTravel, double wheelRadius, boolean inWater, float trackRPM) {
     }
 
-    public void setSuspensionCompressionDelta(Vector3dc suspensionCompressionDelta) {
-        if (suspensionCompressionDelta == null) throw new NullPointerException();
-        this.suspensionCompressionDelta = suspensionCompressionDelta;
-    }
-
-    public record PhysTrackUpdateData(Vector3dc trackContactPosition, Vector3dc trackSpeed, Vector3dc trackNormal,
-                                      Vector3dc suspensionCompression, Long groundShipId, boolean trackHit, float trackRPM) {
-    }
-
-    public record PhysTrackCreateData(Vector3dc trackOriginPosition) {}
+    public record PhysTrackCreateData(BlockPos blockPos) {}
 }

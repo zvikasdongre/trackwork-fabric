@@ -15,7 +15,7 @@ import net.minecraftforge.fml.config.ModConfig;
 public class TrackworkClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        TrackPonders.register();
+        TrackPonderPlugin.registerPlugin();
         TrackworkPartialModels.init();
         TrackworkSpriteShifts.init();
         ClientEvents.init();

@@ -1,9 +1,10 @@
 package edn.stratodonut.trackwork;
 
-import com.simibubi.create.content.kinetics.base.ShaftInstance;
 import com.simibubi.create.content.kinetics.base.ShaftRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import edn.stratodonut.trackwork.blocks.HornBlockEntity;
 import edn.stratodonut.trackwork.blocks.TrackAdjusterBlockEntity;
+import edn.stratodonut.trackwork.blocks.render.HornBlockEntityRenderer;
 import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
@@ -66,11 +67,31 @@ public class TrackBlockEntityTypes {
             .renderer(() -> SimpleWheelRenderer::new)
             .register();
 
+
+
+    public static final BlockEntityEntry<WheelBlockEntity> SMALL_SIMPLE_WHEEL = REGISTRATE
+            .blockEntity("small_simple_wheel", WheelBlockEntity::small)
+            .validBlocks(TrackBlocks.SMALL_SIMPLE_WHEEL)
+            .renderer(() -> SimpleWheelRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<WheelBlockEntity> LARGE_SIMPLE_WHEEL = REGISTRATE
+            .blockEntity("large_simple_wheel", WheelBlockEntity::large)
+            .validBlocks(TrackBlocks.LARGE_SIMPLE_WHEEL)
+            .renderer(() -> SimpleWheelRenderer::new)
+            .register();
+
+
     public static final BlockEntityEntry<TrackAdjusterBlockEntity> TRACK_LEVEL_CONTROLLER = REGISTRATE
             .blockEntity("track_level_controller", TrackAdjusterBlockEntity::new)
-            .instance(() -> ShaftInstance::new)
             .validBlocks(TrackBlocks.TRACK_LEVEL_CONTROLLER)
             .renderer(() -> ShaftRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<HornBlockEntity> HORN = REGISTRATE
+            .blockEntity("horn", HornBlockEntity::new)
+            .validBlocks(TrackBlocks.HORN)
+            .renderer(() -> HornBlockEntityRenderer::new)
             .register();
 
     public static void register() {}

@@ -4,7 +4,6 @@ import com.simibubi.create.AllCreativeModeTabs;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.ItemEntry;
-import edn.stratodonut.trackwork.items.ControllerResetStick;
 import edn.stratodonut.trackwork.items.TrackToolkit;
 import edn.stratodonut.trackwork.items.TrackToolkitRenderer;
 

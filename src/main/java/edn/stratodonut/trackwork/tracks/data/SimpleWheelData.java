@@ -1,6 +1,7 @@
 package edn.stratodonut.trackwork.tracks.data;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import net.minecraft.core.Direction;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
@@ -60,14 +61,14 @@ public class SimpleWheelData {
     public final SimpleWheelData updateWith(SimpleWheelUpdateData update) {
         return new SimpleWheelData(
                 this.wheelOriginPosition,
-                update.trackContactPosition,
-                update.trackSpeed,
-                update.trackNormal,
-                update.suspensionCompression,
-                update.suspensionCompression.sub(this.suspensionCompression, new Vector3d()).div(20, new Vector3d()),
+                this.wheelContactPosition,
+                this.driveForceVector,
+                this.wheelNormal,
+                this.suspensionCompression,
+                this.suspensionCompression.sub(this.suspensionCompression, new Vector3d()).div(20, new Vector3d()),
                 update.isFreespin,
-                update.groundShipId,
-                update.trackHit,
+                this.groundShipId,
+                this.isWheelGrounded,
                 update.trackRPM
         );
     }
@@ -86,8 +87,26 @@ public class SimpleWheelData {
         this.suspensionCompressionDelta = suspensionCompressionDelta;
     }
 
-    public record SimpleWheelUpdateData(Vector3dc trackContactPosition, Vector3dc trackSpeed, Vector3dc trackNormal,
-                                        Vector3dc suspensionCompression, boolean isFreespin, Long groundShipId, boolean trackHit, float trackRPM) {
+    public record SimpleWheelUpdateData(float steeringValue, float trackRPM, Direction.Axis wheelAxis, float axialOffset, float horizontalOffset,
+                                        double susScaled, double wheelRadius, boolean isFreespin) {
+    }
+
+    public record ExtraWheelData(float steeringValue, Direction.Axis wheelAxis, float axialOffset, float horizontalOffset,
+                                 double susScaled, double wheelRadius) {
+        public static ExtraWheelData from(SimpleWheelUpdateData data) {
+            return new ExtraWheelData(
+                    data.steeringValue,
+                    data.wheelAxis,
+                    data.axialOffset,
+                    data.horizontalOffset,
+                    data.susScaled,
+                    data.wheelRadius
+            );
+        }
+
+        public static ExtraWheelData empty() {
+            return new ExtraWheelData(0f, Direction.Axis.X, 0f, 0f, 0.0, 0.0);
+        }
     }
 
     public record SimpleWheelCreateData(Vector3dc trackOriginPosition) {}

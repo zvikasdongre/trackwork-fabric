@@ -1,18 +1,15 @@
 package edn.stratodonut.trackwork.items;
 
-import com.simibubi.create.foundation.utility.Components;
-import com.simibubi.create.foundation.utility.Lang;
 import edn.stratodonut.trackwork.tracks.forces.PhysEntityTrackController;
-import net.minecraft.Util;
-import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.valkyrienskies.core.api.ships.LoadedServerShip;
 import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.api.ships.Ship;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
@@ -33,11 +30,10 @@ public class ControllerResetStick extends Item {
         Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
         if (ship == null) return InteractionResult.FAIL;
         if (!level.isClientSide) {
-            PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate((ServerShip) ship);
+            PhysEntityTrackController controller = PhysEntityTrackController.getOrCreate((LoadedServerShip) ship);
             controller.resetController();
-
-            MutableComponent chatMessage = Lang.text("Fix! ").component();
-            player.displayClientMessage(chatMessage, true);
+            MutableComponent chatMessage = MutableComponent.create(ComponentContents.EMPTY);
+            player.displayClientMessage(chatMessage.append("Fix! "), true);
         }
 
         return InteractionResult.SUCCESS;

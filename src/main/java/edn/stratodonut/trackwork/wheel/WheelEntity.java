@@ -1,58 +1,70 @@
 package edn.stratodonut.trackwork.wheel;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Pose;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.apache.logging.log4j.core.jmx.Server;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3d;
+import org.joml.Quaterniond;
 import org.joml.Vector3d;
+import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.ships.properties.ShipInertiaData;
 import org.valkyrienskies.core.api.ships.properties.ShipTransform;
-import org.valkyrienskies.core.apigame.physics.PhysicsEntityData;
-import org.valkyrienskies.core.apigame.physics.VSWheelCollisionShapeData;
-import org.valkyrienskies.core.impl.game.ships.ShipInertiaDataImpl;
-import org.valkyrienskies.mod.common.entity.VSPhysicsEntity;
+import org.valkyrienskies.core.internal.ShipTeleportData;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityData;
+import org.valkyrienskies.core.internal.physics.PhysicsEntityServer;
+import org.valkyrienskies.core.internal.physics.VSSphereCollisionShapeData;
+import org.valkyrienskies.core.internal.world.VsiServerShipWorld;
+import org.valkyrienskies.mod.common.VSGameUtilsKt;
+import org.valkyrienskies.mod.common.util.DimensionIdProvider;
 
-public class WheelEntity extends VSPhysicsEntity {
+import javax.annotation.Nullable;
 
-    @SuppressWarnings("unchecked")
-    public WheelEntity(@NotNull EntityType<? extends VSPhysicsEntity> type, @NotNull Level level) {
-        super((EntityType<VSPhysicsEntity>) type, level);
+import static org.valkyrienskies.mod.common.ValkyrienSkiesMod.getVsCore;
+
+public class WheelEntity {
+    public static @Nullable PhysicsEntityServer getInLevel(ServerLevel level, long id) {
+        if (!aliveInLevel(level, id)) {
+            return null;
+        }
+        return VSGameUtilsKt.getShipObjectWorld(level)
+                .retrieveLoadedPhysicsEntities().get(id);
     }
 
-    @Override
-    public @NotNull EntityDimensions getDimensions(@NotNull Pose p_19975_) {
-        return new EntityDimensions(0.01F, 0.01F, false);
+    public static boolean aliveInLevel(ServerLevel level, long id) {
+        return VSGameUtilsKt.getShipObjectWorld(level)
+                .retrieveLoadedPhysicsEntities().containsKey(id);
     }
 
-    int timeout = 0;
-    @Override
-    public void tick() {
-        super.tick();
+    public static void createInLevel(ServerLevel level, PhysicsEntityData data) {
+        VSGameUtilsKt.getShipObjectWorld(level).createPhysicsEntity(data, ((DimensionIdProvider) level).getDimensionId());
+    }
 
-        // Debug particles
-//        BlockPos p_51253_ = this.blockPosition();
-//        this.level.addParticle(ParticleTypes.SMOKE, (double)p_51253_.getX() + 0.5D + random.nextDouble() / 4.0D * (double)(random.nextBoolean() ? 1 : -1), (double)p_51253_.getY() + 0.4D, (double)p_51253_.getZ() + 0.5D + random.nextDouble() / 4.0D * (double)(random.nextBoolean() ? 1 : -1), 0.0D, 0.005D, 0.0D);
-
-        if (this.level().isClientSide) return;
-
-        timeout++;
-
-        if (timeout > 60) {
-            this.kill();
+    public static void removeInLevel(ServerLevel level, long id) {
+        if (aliveInLevel(level, id)) {
+            VSGameUtilsKt.getShipObjectWorld(level).deletePhysicsEntity(id);
         }
     }
 
-    public long getShipId() {
-        if (this.getPhysicsEntityData() == null) return -1L;
-        return this.getPhysicsEntityData().getShipId();
-    }
+    public static boolean moveTo(ServerLevel level, long id, Vector3dc pos) {
+        if (!aliveInLevel(level, id)) {
+            return false;
+        }
+        PhysicsEntityServer serverData = VSGameUtilsKt.getShipObjectWorld(level)
+                .retrieveLoadedPhysicsEntities().get(id);
 
-    public void keepAlive() {
-        this.timeout = 0;
+        ShipTeleportData teleportData = getVsCore().newShipTeleportData(
+                pos,
+                new Quaterniond(),
+                new Vector3d(),
+                new Vector3d(),
+                null,
+                null,
+                null
+        );
+        VSGameUtilsKt.getShipObjectWorld(level).teleportPhysicsEntity(serverData, teleportData);
+        return true;
     }
 
     public static final class DataBuilder {
@@ -62,8 +74,10 @@ public class WheelEntity extends VSPhysicsEntity {
         @NotNull
         public static PhysicsEntityData createBasicData(long shipId, @NotNull ShipTransform transform, double radius, double mass) {
             double inertia = 0.4 * mass * radius * radius;
-            ShipInertiaData inertiaData = new ShipInertiaDataImpl(new Vector3d(), mass * radius, new Matrix3d().scale(inertia));
-            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(11 * radius));
+            ShipInertiaData inertiaData = getVsCore().newShipInertiaData(new Vector3d(), mass * radius, new Matrix3d().scale(inertia));
+            VSSphereCollisionShapeData collisionShapeData = new VSSphereCollisionShapeData(radius);
+            // TODO: Current crashes physics, reimplement when safe
+//            VSWheelCollisionShapeData collisionShapeData = new VSWheelCollisionShapeData(radius, 0.45, (int)(11 * radius));
             return new PhysicsEntityData(
                     shipId,
                     transform,

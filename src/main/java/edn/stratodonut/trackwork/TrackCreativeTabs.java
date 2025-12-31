@@ -3,7 +3,6 @@ package edn.stratodonut.trackwork;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllCreativeModeTabs;
 import com.simibubi.create.foundation.data.CreateRegistrate;
-import com.simibubi.create.foundation.utility.Components;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
@@ -18,12 +17,13 @@ import net.minecraft.world.level.block.Block;
 import java.util.function.Supplier;
 
 import static edn.stratodonut.trackwork.TrackworkMod.REGISTRATE;
+import static net.minecraft.network.chat.Component.translatable;
 
 public class TrackCreativeTabs {
     public static final AllCreativeModeTabs.TabInfo BASE_CREATIVE_TAB = register("base",
             () -> FabricItemGroup.builder()
-                    .title(Components.translatable("itemGroup.trackwork"))
-                    .icon(AllBlocks.BELT::asStack)
+                    .title(translatable("itemGroup.trackwork"))
+                    .icon(TrackBlocks.SIMPLE_WHEEL_PART::asStack)
                     .displayItems((displayParams, output) -> {
                         for (RegistryEntry<Item> entry : REGISTRATE.getAll(Registries.ITEM)) {
                             if (CreateRegistrate.isInCreativeTab(entry, AllCreativeModeTabs.BASE_CREATIVE_TAB.key()))
