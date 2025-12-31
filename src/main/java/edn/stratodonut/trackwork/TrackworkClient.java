@@ -3,6 +3,7 @@ package edn.stratodonut.trackwork;
 import edn.stratodonut.trackwork.client.ClientEvents;
 import edn.stratodonut.trackwork.client.TrackworkPartialModels;
 import edn.stratodonut.trackwork.client.TrackworkSpriteShifts;
+import edn.stratodonut.trackwork.tracks.blocks.OleoWheelBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
@@ -43,6 +44,22 @@ public class TrackworkClient implements ClientModInitializer {
             client.execute(() -> {
                 // Everything in this lambda is run on the render thread
                 WheelBlockEntity be = (WheelBlockEntity) client.level.getBlockEntity(target);
+                if (be == null) {
+                    return;
+                }
+
+                be.handlePacket(wheelTravel, steeringValue, horizontalOffset);
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(TrackPackets.OLEO_WHEEL_PACKET_ID, (client, handler, buf, responseSender) -> {
+            BlockPos target = buf.readBlockPos();
+            float wheelTravel = buf.readFloat();
+            float steeringValue = buf.readFloat();
+            float horizontalOffset = buf.readFloat();
+            client.execute(() -> {
+                // Everything in this lambda is run on the render thread
+                OleoWheelBlockEntity be = (OleoWheelBlockEntity) client.level.getBlockEntity(target);
                 if (be == null) {
                     return;
                 }

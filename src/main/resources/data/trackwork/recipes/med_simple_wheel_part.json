@@ -1,14 +1,11 @@
 {
   "type": "create:mechanical_crafting",
   "pattern": [
-    " KKK ",
-    "KACAK",
-    " KKK "
+    "KKK ",
+    "KCK",
+    "KKK "
   ],
   "key": {
-    "A": {
-      "item": "create:andesite_alloy"
-    },
     "C": {
       "item": "create:cogwheel"
     },

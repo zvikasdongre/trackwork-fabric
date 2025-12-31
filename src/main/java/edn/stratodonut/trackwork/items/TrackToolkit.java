@@ -2,10 +2,8 @@ package edn.stratodonut.trackwork.items;
 
 import com.simibubi.create.AllSoundEvents;
 import edn.stratodonut.trackwork.TrackSounds;
-import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
-import edn.stratodonut.trackwork.tracks.blocks.TrackBaseBlock;
-import edn.stratodonut.trackwork.tracks.blocks.WheelBlock;
-import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
+import edn.stratodonut.trackwork.tracks.blocks.*;
+import edn.stratodonut.trackwork.tracks.forces.OleoWheelController;
 import edn.stratodonut.trackwork.tracks.forces.PhysicsTrackController;
 import edn.stratodonut.trackwork.tracks.forces.SimpleWheelController;
 import net.minecraft.core.BlockPos;
@@ -94,6 +92,11 @@ public class TrackToolkit extends Item {
                                 context.getClickedFace());
 
                         return InteractionResult.SUCCESS;
+                    } else if (be instanceof OleoWheelBlockEntity owbe) {
+                        Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
+                        if (ship == null) return InteractionResult.FAIL;
+                        owbe.setOffset(VectorConversionsMCKt.toJOML(context.getClickLocation().subtract(Vec3.atCenterOf(context.getClickedPos()))),
+                                context.getClickedFace());
                     }
                 }
                 case STIFFNESS -> {
@@ -120,6 +123,18 @@ public class TrackToolkit extends Item {
                         if (ship == null) return InteractionResult.FAIL;
                         if (!level.isClientSide) {
                             SimpleWheelController controller = SimpleWheelController.getOrCreate((LoadedServerShip) ship);
+                            float result = controller.setDamperCoefficient(isSneaking ? -1f : 1f);
+
+                            chatMessage.append("Adjusted suspension stiffness to "+ result);
+
+                            player.displayClientMessage(chatMessage, true);
+                        }
+                        return InteractionResult.SUCCESS;
+                    } else if (hitBlock instanceof OleoWheelBlock) {
+                        Ship ship = VSGameUtilsKt.getShipObjectManagingPos(level, context.getClickedPos());
+                        if (ship == null) return InteractionResult.FAIL;
+                        if (!level.isClientSide) {
+                            OleoWheelController controller = OleoWheelController.getOrCreate((LoadedServerShip) ship);
                             float result = controller.setDamperCoefficient(isSneaking ? -1f : 1f);
 
                             chatMessage.append("Adjusted suspension stiffness to "+ result);

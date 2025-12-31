@@ -18,6 +18,8 @@
   "block.trackwork.small_simple_wheel": "Small Wheel",
   "block.trackwork.small_simple_wheel_part":"Small Spare Tire",
 
+  "block.trackwork.oleo_wheel":"Oleo Wheel",
+
   "block.trackwork.horn": "Car Horn",
   "block.trackwork.horn.tooltip.summary": "Activates via redstone, _right click_ to set the pitch.",
 
@@ -50,5 +52,12 @@
   "trackwork.ponder.wheels.text_3" : "Drive the wheels via the inner side,",
   "trackwork.ponder.wheels.text_4" : "Or don't connect them, which lets the wheel spin freely.",
   "trackwork.ponder.wheels.text_5" : "Power a wheel with redstone to steer it,",
-  "trackwork.ponder.wheels.text_6" : "and the opposite side will automatically follow."
+  "trackwork.ponder.wheels.text_6" : "and the opposite side will automatically follow.",
+
+  "trackwork.ponder.oleo.header" : "Building Oleos 101",
+  "trackwork.ponder.oleo.text_1" : "Disclaimer: Oleo wheels only work on assembled VS2 ships!",
+  "trackwork.ponder.oleo.text_2" : "There are two variants of landing gear - Use a wrench to switch between them.",
+  "trackwork.ponder.oleo.text_3" : "Apply a Redstone signal to the sides of the block to steer,",
+  "trackwork.ponder.oleo.text_4" : "and apply to the front or back of the block to brake.",
+  "trackwork.ponder.oleo.text_5" : "Use contraption mechanisms to stow your landing gear after takeoff."
 }

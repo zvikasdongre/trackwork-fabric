@@ -50,7 +50,7 @@ public class HornSoundInstance extends AbstractTickableSoundInstance {
         }
 
         if (playing) {
-            volume = Math.min(1, volume + .25f);
+            volume = Math.min(1, volume + .5f);
             this.ticksLeft--;
             if (ticksLeft == 0) {
                 this.kill();

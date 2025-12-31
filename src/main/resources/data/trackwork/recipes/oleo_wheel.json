@@ -2,25 +2,25 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     " S ",
-    "AGW",
-    " AA"
+    " P ",
+    " AW"
   ],
   "key": {
     "A": {
       "item": "create:andesite_alloy"
     },
-    "G": {
-      "item": "create:gearbox"
-    },
     "W": {
-      "item": "trackwork:med_simple_wheel_part"
+      "item": "trackwork:small_simple_wheel_part"
     },
     "S": {
+      "item": "create:piston_extension_pole"
+    },
+    "P": {
       "item": "create:mechanical_piston"
     }
   },
   "result": {
-    "item": "trackwork:med_simple_wheel",
-    "count": 1
+    "item": "trackwork:oleo_wheel",
+    "count": 2
   }
 }

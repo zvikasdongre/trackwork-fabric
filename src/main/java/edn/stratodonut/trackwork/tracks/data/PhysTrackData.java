@@ -9,6 +9,8 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 import org.valkyrienskies.core.api.util.PhysTickOnly;
 
+import javax.annotation.Nullable;
+
 import static org.valkyrienskies.mod.common.util.VectorConversionsMCKt.toMinecraft;
 
 @JsonAutoDetect(
@@ -25,6 +27,7 @@ public class PhysTrackData {
     public final boolean inWater;
 
     @PhysTickOnly
+    @Nullable
     public Vector3dc lastSuspensionForce;
     public final double effectiveSuspensionTravel;
 

@@ -2,25 +2,22 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     " S ",
-    "AGW",
+    "AAW",
     " AA"
   ],
   "key": {
     "A": {
       "item": "create:andesite_alloy"
     },
-    "G": {
-      "item": "create:gearbox"
-    },
     "W": {
-      "item": "trackwork:med_simple_wheel_part"
+      "item": "trackwork:large_simple_wheel_part"
     },
     "S": {
       "item": "create:mechanical_piston"
     }
   },
   "result": {
-    "item": "trackwork:med_simple_wheel",
+    "item": "trackwork:large_simple_wheel",
     "count": 1
   }
 }

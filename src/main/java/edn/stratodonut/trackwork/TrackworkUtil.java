@@ -3,6 +3,7 @@ package edn.stratodonut.trackwork;
 import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
 import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -84,13 +85,10 @@ public class TrackworkUtil {
         }
 
         bResult = new ReducedRayCastResult(accumResult.get().distance, accumResult.get().velocity);
-        if (bResult.distance < 0) {
-            // TODO: what to do if the wheel is inside?
-        }
         Vector3dc worldSpacehitExact = normal.normalize(bResult.distance, new Vector3d()).add(start);
         Vector3dc forceNormal = start.sub(worldSpacehitExact, new Vector3d());
         return new ClipResult(
-                worldSpaceAxis.cross(forceNormal, new Vector3d()).normalize(),
+                normal.cross(worldSpaceAxis, new Vector3d()).normalize(),
                 forceNormal,
                 bResult.velocity()
         );

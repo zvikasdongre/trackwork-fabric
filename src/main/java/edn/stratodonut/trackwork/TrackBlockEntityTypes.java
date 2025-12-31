@@ -5,9 +5,8 @@ import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import edn.stratodonut.trackwork.blocks.HornBlockEntity;
 import edn.stratodonut.trackwork.blocks.TrackAdjusterBlockEntity;
 import edn.stratodonut.trackwork.blocks.render.HornBlockEntityRenderer;
-import edn.stratodonut.trackwork.tracks.blocks.PhysEntityTrackBlockEntity;
-import edn.stratodonut.trackwork.tracks.blocks.SuspensionTrackBlockEntity;
-import edn.stratodonut.trackwork.tracks.blocks.WheelBlockEntity;
+import edn.stratodonut.trackwork.tracks.blocks.*;
+import edn.stratodonut.trackwork.tracks.render.OleoWheelRenderer;
 import edn.stratodonut.trackwork.tracks.render.PhysEntityTrackRenderer;
 import edn.stratodonut.trackwork.tracks.render.SimpleWheelRenderer;
 import edn.stratodonut.trackwork.tracks.render.SuspensionRenderer;
@@ -65,6 +64,12 @@ public class TrackBlockEntityTypes {
             .blockEntity("med_simple_wheel", WheelBlockEntity::med)
             .validBlocks(TrackBlocks.MED_SIMPLE_WHEEL)
             .renderer(() -> SimpleWheelRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<OleoWheelBlockEntity> OLEO_WHEEL = REGISTRATE
+            .blockEntity("oleo_wheel", OleoWheelBlockEntity.factory(0.5f, 1.5f))
+            .validBlocks(TrackBlocks.OLEO_WHEEL)
+            .renderer(() -> OleoWheelRenderer::new)
             .register();
 
 

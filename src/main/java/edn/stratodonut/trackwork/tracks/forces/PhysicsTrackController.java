@@ -165,7 +165,10 @@ public final class PhysicsTrackController implements ShipPhysicsListener {
         double suspensionTravel = clipResult.equals(TrackworkUtil.ClipResult.MISS) ? suspensionRestPosition : clipResult.suspensionLength().length() - 0.5;
         Vector3dc suspensionForce = toJOML(worldSpaceNormal.scale( (suspensionRestPosition - suspensionTravel))).negate();
 
-        double suspensionCompressionDelta = suspensionForce.sub(data.lastSuspensionForce, new Vector3d()).length();
+        double suspensionCompressionDelta = 0;
+        if (data.lastSuspensionForce != null) {
+            suspensionCompressionDelta = suspensionForce.sub(data.lastSuspensionForce, new Vector3d()).length();
+        }
         data.lastSuspensionForce = suspensionForce;
 
         BodyKinematics pose = ship.getKinematics();

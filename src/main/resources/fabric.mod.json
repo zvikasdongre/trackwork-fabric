@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "trackwork",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "name": "Trackwork",
   "description": "An addon for VS2 and Create that adds track treads to traverse terrain! Ported to Fabric.",
   "authors": [

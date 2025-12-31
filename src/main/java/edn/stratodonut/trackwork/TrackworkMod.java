@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 
+import edn.stratodonut.trackwork.tracks.forces.OleoWheelController;
 import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.ResourceLocation;
@@ -59,6 +60,12 @@ public class TrackworkMod implements ModInitializer
 
         VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
                 .newAttachmentRegistrationBuilder(SimpleWheelController.class)
+                .useLegacySerializer()
+                .build()
+        );
+
+        VSGameUtilsKt.getVsCore().registerAttachment(VSGameUtilsKt.getVsCore()
+                .newAttachmentRegistrationBuilder(OleoWheelController.class)
                 .useLegacySerializer()
                 .build()
         );

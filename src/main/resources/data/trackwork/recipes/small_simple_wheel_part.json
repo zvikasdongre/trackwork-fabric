@@ -1,23 +1,20 @@
 {
   "type": "create:mechanical_crafting",
   "pattern": [
-    " KKK ",
-    "KACAK",
-    " KKK "
+    " K ",
+    "KAK",
+    " K "
   ],
   "key": {
     "A": {
       "item": "create:andesite_alloy"
-    },
-    "C": {
-      "item": "create:cogwheel"
     },
     "K": {
       "item": "minecraft:dried_kelp"
     }
   },
   "result": {
-    "item": "trackwork:simple_wheel_part",
+    "item": "trackwork:small_simple_wheel_part",
     "count": 2
   }
 }

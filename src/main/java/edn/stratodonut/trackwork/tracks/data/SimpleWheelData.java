@@ -1,9 +1,13 @@
 package edn.stratodonut.trackwork.tracks.data;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.valkyrienskies.core.api.util.PhysTickOnly;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -11,20 +15,22 @@ import javax.annotation.Nullable;
 @JsonAutoDetect(
         fieldVisibility = JsonAutoDetect.Visibility.ANY
 )
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SimpleWheelData {
     public final Vector3dc wheelOriginPosition;
     public final Vector3dc wheelContactPosition;
     public final Vector3dc driveForceVector;
     public final Vector3dc wheelNormal;
-    public final Vector3dc suspensionCompression;
     public final boolean isFreespin;
     @Nullable
     public Long groundShipId;
-    private Vector3dc suspensionCompressionDelta;
     public final boolean isWheelGrounded;
     public float wheelRPM;
 
     public float trackSU;
+    @PhysTickOnly
+    @Nullable
+    public Vector3dc lastSuspensionForce;
 
     // For Jackson serialisation
     private SimpleWheelData() {
@@ -36,22 +42,17 @@ public class SimpleWheelData {
         this.wheelContactPosition = new Vector3d(0);
         this.driveForceVector = new Vector3d(0);
         this.wheelNormal = new Vector3d(0, -1, 0);
-        this.suspensionCompression = new Vector3d(0);
-        this.suspensionCompressionDelta = new Vector3d(0);
         this.isFreespin = true;
         this.isWheelGrounded = false;
         this.wheelRPM = 0;
     }
 
     public SimpleWheelData(Vector3dc wheelOriginPosition, Vector3dc wheelContactPosition, Vector3dc driveForceVector,
-                           Vector3dc wheelNormal, Vector3dc suspensionCompression, Vector3dc suspensionCompressionDelta,
-                           boolean isFreespin, @Nullable Long groundShipId, boolean isWheelGrounded, float wheelRPM) {
+                           Vector3dc wheelNormal, boolean isFreespin, @Nullable Long groundShipId, boolean isWheelGrounded, float wheelRPM) {
         this.wheelOriginPosition = wheelOriginPosition;
         this.wheelContactPosition = wheelContactPosition;
         this.driveForceVector = driveForceVector;
         this.wheelNormal = wheelNormal;
-        this.suspensionCompression = suspensionCompression;
-        this.suspensionCompressionDelta = suspensionCompressionDelta;
         this.isFreespin = isFreespin;
         this.groundShipId = groundShipId;
         this.isWheelGrounded = isWheelGrounded;
@@ -64,8 +65,6 @@ public class SimpleWheelData {
                 this.wheelContactPosition,
                 this.driveForceVector,
                 this.wheelNormal,
-                this.suspensionCompression,
-                this.suspensionCompression.sub(this.suspensionCompression, new Vector3d()).div(20, new Vector3d()),
                 update.isFreespin,
                 this.groundShipId,
                 this.isWheelGrounded,
@@ -75,16 +74,6 @@ public class SimpleWheelData {
 
     public static SimpleWheelData from(SimpleWheelCreateData data) {
         return new SimpleWheelData(data.trackOriginPosition);
-    }
-
-    @Nonnull
-    public Vector3dc getSuspensionCompressionDelta() {
-        return suspensionCompressionDelta;
-    }
-
-    public void setSuspensionCompressionDelta(Vector3dc suspensionCompressionDelta) {
-        if (suspensionCompressionDelta == null) throw new NullPointerException();
-        this.suspensionCompressionDelta = suspensionCompressionDelta;
     }
 
     public record SimpleWheelUpdateData(float steeringValue, float trackRPM, Direction.Axis wheelAxis, float axialOffset, float horizontalOffset,
